@@ -41,7 +41,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     let alive = true;
     const t0 = performance.now();
     loadReferences((progress) => alive && setBase((s) => ({ ...s, progress })))
-      .then((cols) => alive && setBase({ status: 'ready', progress: 1, cols, loadMs: performance.now() - t0 }))
+      .then((cols) => {
+        const loadMs = performance.now() - t0;
+        // Read-only performance probe (end-to-end performance test).
+        const perf = ((window as unknown as { __bcPerf?: Record<string, unknown> }).__bcPerf ??= {});
+        perf.loadMs = Math.round(loadMs);
+        perf.sinceNavigationMs = Math.round(performance.now());
+        if (alive) setBase({ status: 'ready', progress: 1, cols, loadMs });
+      })
       .catch((err) => alive && setBase({ status: 'error', progress: 0, error: String(err?.message ?? err) }));
     return () => {
       alive = false;

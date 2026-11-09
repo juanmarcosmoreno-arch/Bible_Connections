@@ -23,6 +23,7 @@ function applyHash() {
     route: u.route,
     filters: u.filters,
     ...(u.selection !== undefined ? { selection: u.selection } : {}),
+    ...(u.selection || u.pendingReference ? { panelOpen: true } : {}),
   });
 }
 

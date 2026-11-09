@@ -119,7 +119,7 @@ void main() {
     acc = mix(acc, vec3(g), 0.85) * uDim;
   }
   if (uInk > 0.5) {
-    vec3 tr = exp(-2.2 * log(1.0 + 8.0 * uExposure * acc) / log(9.0));
+    vec3 tr = exp(-1.7 * log(1.0 + 8.0 * uExposure * acc) / log(9.0));
     outColor = vec4(uBg * tr, 1.0);
     return;
   }
@@ -159,6 +159,9 @@ interface InstanceSet {
   buffer: WebGLBuffer;
   count: number;
   buckets: ArcBuffers['buckets'];
+  /** CPU data waiting to be uploaded (uploads happen only when the GPU is idle). */
+  pending: ArcBuffers | null | undefined;
+  version: number;
 }
 
 export class WebGLArcRenderer implements ArcRenderer {
@@ -177,6 +180,9 @@ export class WebGLArcRenderer implements ArcRenderer {
   private accTex: WebGLTexture | null = null;
   private accSize = [0, 0];
   private fence: WebGLSync | null = null;
+  /** Progressive accumulation: what the FBO currently holds. */
+  private acc = { key: '', done: 0 };
+  private step = 0.25;
   private fenceStart = 0;
   private gpuMs = 0;
   readonly toneMapped: boolean;
@@ -232,25 +238,30 @@ export class WebGLArcRenderer implements ArcRenderer {
     gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 16, 0);
     gl.vertexAttribDivisor(1, 1);
     gl.bindVertexArray(null);
-    return { vao, buffer, count: 0, buckets: undefined };
+    return { vao, buffer, count: 0, buckets: undefined, pending: undefined, version: 0 };
   }
 
-  private upload(set: InstanceSet, b: ArcBuffers | null) {
+  /** Uploads pending data. Called from render(), i.e. only when the previous frame is done. */
+  private flush(set: InstanceSet) {
+    if (set.pending === undefined) return;
+    const b = set.pending;
+    set.pending = undefined;
     const gl = this.gl;
     gl.bindBuffer(gl.ARRAY_BUFFER, set.buffer);
     if (b && b.count) gl.bufferData(gl.ARRAY_BUFFER, b.data.subarray(0, b.count * 4), gl.STATIC_DRAW);
     set.count = b ? b.count : 0;
     set.buckets = b?.buckets;
+    set.version++;
   }
 
   setArcs(b: ArcBuffers) {
-    this.upload(this.sets.base, b);
+    this.sets.base.pending = b;
   }
   setHighlight(b: ArcBuffers | null) {
-    this.upload(this.sets.highlight, b);
+    this.sets.highlight.pending = b;
   }
   setHover(b: ArcBuffers | null) {
-    this.upload(this.sets.hover, b);
+    this.sets.hover.pending = b;
   }
 
   resize(w: number, h: number, dpr: number) {
@@ -281,22 +292,27 @@ export class WebGLArcRenderer implements ArcRenderer {
     return ok;
   }
 
-  /** Draws `set` (optionally only the vote-ordered prefix fraction of each bucket). */
-  private drawSet(set: InstanceSet, p: RenderParams, W: number, fraction: number) {
+  /**
+   * Draws the slice [from, to) (fractions 0..1) of every distance group of `set`. Groups keep
+   * vote order, so drawing increasing fractions refines from the most to the least voted arcs.
+   */
+  private drawSet(set: InstanceSet, p: RenderParams, W: number, to: number, from = 0) {
     const gl = this.gl;
     gl.bindVertexArray(set.vao);
     const groups = set.buckets ?? [{ start: 0, count: set.count, maxDist: 1 }];
     const pxPerUnit = W / (p.view.x1 - p.view.x0);
     for (const g of groups) {
-      const count = fraction >= 1 ? g.count : Math.ceil(g.count * fraction);
-      if (!count) continue;
+      const a = Math.floor(g.count * from);
+      const b = to >= 1 ? g.count : Math.ceil(g.count * to);
+      const count = b - a;
+      if (count <= 0) continue;
       const maxPx = Math.min(W * 4, g.maxDist * pxPerUnit);
       const want = Math.sqrt(Math.max(1, maxPx)) * 2.4;
       const seg = SEGMENT_LEVELS.find((s) => s >= want) ?? SEGMENT_LEVELS[SEGMENT_LEVELS.length - 1];
       gl.bindBuffer(gl.ARRAY_BUFFER, this.corners.get(seg)!);
       gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
       gl.bindBuffer(gl.ARRAY_BUFFER, set.buffer);
-      gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 16, g.start * 16);
+      gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 16, (g.start + a) * 16);
       gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, (seg + 1) * 2, count);
     }
     gl.bindVertexArray(null);
@@ -344,31 +360,49 @@ export class WebGLArcRenderer implements ArcRenderer {
 
   render(p: RenderParams): boolean {
     const gl = this.gl;
+    this.flush(this.sets.base);
+    this.flush(this.sets.highlight);
+    this.flush(this.sets.hover);
     const W = this.canvas.width, H = this.canvas.height;
     const light = p.theme === 'light';
     const ink = light && !p.transparent;
-    const fraction = p.limit == null || !this.sets.base.count ? 1 : Math.min(1, p.limit / this.sets.base.count);
+    const target = p.limit == null || !this.sets.base.count ? 1 : Math.min(1, p.limit / this.sets.base.count);
     const bg = hexToRgb(p.background);
     gl.enable(gl.BLEND);
 
     let toneOk = this.toneMapped;
-    // Half-resolution accumulation while interacting on high-DPI screens.
-    const scale = p.interacting && p.dpr > 1.25 ? 0.5 : 1;
+    // Accumulation resolution: half while interacting on HiDPI screens, and capped at ~4 Mpx.
+    const cap = Math.min(1, Math.sqrt(4.2e6 / (W * H)));
+    const scale = Math.min(cap, p.interacting && p.dpr > 1.25 ? 0.5 : 1);
     const aw = Math.max(1, Math.round(W * scale)), ah = Math.max(1, Math.round(H * scale));
     if (toneOk) toneOk = this.ensureFbo(aw, ah);
+    let complete = true;
 
     if (toneOk) {
-      // 1. Accumulate the base layer.
+      // 1. Accumulate the base layer progressively (persistent across frames).
+      const key = JSON.stringify([p.view.x0, p.view.x1, aw, ah, ink, p.lineWidth, p.grow, p.layout.baseline, p.layout.ratio, p.dpr, this.sets.base.version, target]);
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
       gl.viewport(0, 0, aw, ah);
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.blendEquation(gl.FUNC_ADD);
-      gl.blendFunc(gl.ONE, gl.ONE);
-      this.setArcUniforms(p, aw, ah, scale);
-      this.lineUniforms(p.lineWidth, p.dpr * scale, 1, 0, ink ? 1 : 0);
-      if (this.sets.base.count) this.drawSet(this.sets.base, p, aw, fraction);
-      // 2. Tone-map to the canvas.
+      if (key !== this.acc.key) {
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        this.acc = { key, done: 0 };
+      }
+      if (this.acc.done < target && this.sets.base.count) {
+        // Interaction frames draw their whole (reduced) set at once; idle frames refine in
+        // slices sized from the measured GPU time.
+        if (this.gpuMs > 60) this.step = Math.max(0.02, this.step * 0.5);
+        else if (this.gpuMs > 0 && this.gpuMs < 25) this.step = Math.min(1, this.step * 1.6);
+        const next = p.interacting ? target : Math.min(target, this.acc.done + this.step);
+        gl.blendEquation(gl.FUNC_ADD);
+        gl.blendFunc(gl.ONE, gl.ONE);
+        this.setArcUniforms(p, aw, ah, scale);
+        this.lineUniforms(p.lineWidth, p.dpr * scale, 1, 0, ink ? 1 : 0);
+        this.drawSet(this.sets.base, p, aw, next, this.acc.done);
+        this.acc.done = next;
+      }
+      complete = this.acc.done >= target;
+      // 2. Tone-map to the canvas (exposure compensates for the fraction drawn so far).
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.viewport(0, 0, W, H);
       gl.disable(gl.BLEND);
@@ -376,7 +410,7 @@ export class WebGLArcRenderer implements ArcRenderer {
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, this.accTex);
       gl.uniform1i(this.ut.uAcc, 1);
-      gl.uniform1f(this.ut.uExposure, p.alpha / fraction);
+      gl.uniform1f(this.ut.uExposure, p.alpha / Math.max(1e-3, this.acc.done || 1));
       gl.uniform1f(this.ut.uInk, ink ? 1 : 0);
       gl.uniform1f(this.ut.uDim, p.dimmed ? 0.07 : 0);
       gl.uniform3f(this.ut.uBg, bg[0], bg[1], bg[2]);
@@ -385,7 +419,7 @@ export class WebGLArcRenderer implements ArcRenderer {
       gl.bindVertexArray(null);
       gl.enable(gl.BLEND);
     } else {
-      // Fallback: direct blending with a small per-arc alpha.
+      // Fallback: direct blending with a small per-arc alpha (single pass).
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.viewport(0, 0, W, H);
       if (ink) gl.clearColor(bg[0], bg[1], bg[2], 1);
@@ -394,9 +428,9 @@ export class WebGLArcRenderer implements ArcRenderer {
       gl.blendEquation(ink ? gl.FUNC_REVERSE_SUBTRACT : gl.FUNC_ADD);
       gl.blendFunc(gl.ONE, light && !ink ? gl.ONE_MINUS_SRC_ALPHA : gl.ONE);
       this.setArcUniforms(p, W, H, 1);
-      const a = Math.min(0.9, Math.max(0.015, 0.05 * Math.sqrt(345000 / Math.max(1, this.sets.base.count * fraction)))) * p.intensity * (p.dimmed ? 0.25 : 1);
+      const a = Math.min(0.9, Math.max(0.015, 0.05 * Math.sqrt(345000 / Math.max(1, this.sets.base.count * target)))) * p.intensity * (p.dimmed ? 0.25 : 1);
       this.lineUniforms(p.lineWidth, p.dpr, a, 0, ink ? 1 : light ? 2 : 0);
-      if (this.sets.base.count) this.drawSet(this.sets.base, p, W, fraction);
+      if (this.sets.base.count) this.drawSet(this.sets.base, p, W, target);
     }
 
     // 3. Highlighted connections and hovered arc, on top at full resolution.
@@ -420,7 +454,7 @@ export class WebGLArcRenderer implements ArcRenderer {
     this.fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
     this.fenceStart = performance.now();
     gl.flush();
-    return true;
+    return complete;
   }
 
   dispose() {

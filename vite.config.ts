@@ -7,8 +7,9 @@ import tailwindcss from '@tailwindcss/vite';
 // base can be overridden with BASE_PATH (the deploy workflow sets it from the repo name).
 const base = process.env.BASE_PATH ?? '/Bible_Connections/';
 
-export default defineConfig(({ command }) => ({
-  base: command === 'build' ? base : '/',
+export default defineConfig(({ command, isPreview }) => ({
+  // The dev server runs at "/"; the production build and `vite preview` use the Pages base.
+  base: command === 'build' || isPreview ? base : '/',
   plugins: [react(), tailwindcss()],
   worker: { format: 'es' },
   build: {

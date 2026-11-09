@@ -48,8 +48,8 @@ export function DetailPanel() {
   return (
     <aside
       className={`z-20 flex flex-col border-line bg-panel/95 backdrop-blur
-        max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:rounded-t-2xl max-lg:border-t max-lg:shadow-[var(--shadow)] max-lg:pb-[env(safe-area-inset-bottom)]
-        ${expanded ? 'max-lg:h-[85dvh]' : selection ? 'max-lg:h-[46dvh]' : 'max-lg:hidden'}
+        max-lg:fixed max-lg:inset-x-0 max-lg:rounded-t-2xl max-lg:border-t max-lg:shadow-[var(--shadow)] max-lg:pb-[env(safe-area-inset-bottom)]
+        ${expanded ? 'max-lg:h-[85dvh]' : selection ? 'max-lg:h-[46dvh]' : 'max-lg:hidden'} max-md:bottom-[calc(57px+env(safe-area-inset-bottom))] md:max-lg:bottom-0
         lg:relative lg:h-full lg:w-[400px] lg:shrink-0 lg:border-l`}
       aria-label={t('panel.selection')}
       data-testid="detail-panel"

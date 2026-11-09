@@ -261,6 +261,7 @@ export function ArcView({ onRenderer }: { onRenderer?: (kind: 'webgl' | 'canvas'
       perf.gpuMs = r.lastFrameMs?.() ?? null;
       perf.lod = s.lod;
       perf.view = [s.view.x0, s.view.x1];
+      perf.complete = s.complete;
       const oc = overlayRef.current!;
       const ctx = oc.getContext('2d')!;
       ctx.setTransform(1, 0, 0, 1, 0, 0);

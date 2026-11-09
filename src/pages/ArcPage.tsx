@@ -6,6 +6,7 @@ import { Button, Icon, IconButton, Spinner } from '../components/ui/index.tsx';
 import { useData } from '../hooks/useData.tsx';
 import { formatNumber, useT } from '../i18n/index.ts';
 import { actions, useApp } from '../state/appState.ts';
+import { focusTestament } from '../state/navigation.ts';
 import { ArcView } from '../visualizations/ArcVisualization/ArcView.tsx';
 import { arcController } from '../visualizations/ArcVisualization/controller.ts';
 import { ArcLegend } from '../visualizations/ArcVisualization/Legend.tsx';
@@ -16,6 +17,7 @@ export function ArcPage() {
   const filtersOpen = useApp((s) => s.filtersOpen);
   const filters = useApp((s) => s.filters);
   const introDismissed = useApp((s) => s.introDismissed);
+  const sheetOpen = useApp((s) => s.panelOpen && s.selection != null);
   const data = useData();
   const [renderer, setRenderer] = useState<'webgl' | 'canvas' | null>(null);
 
@@ -33,7 +35,8 @@ export function ArcPage() {
         </aside>
       )}
 
-      <div className="relative min-w-0 flex-1 overflow-hidden" data-testid="arc-page">
+      {/* On small screens the details sheet sits below the arcs instead of covering the axis. */}
+      <div className={`relative min-w-0 flex-1 overflow-hidden ${sheetOpen ? 'max-lg:mb-[46dvh]' : ''}`} data-testid="arc-page">
         <ArcView onRenderer={setRenderer} />
 
         {data.status === 'ready' && !introDismissed && (
@@ -89,6 +92,19 @@ export function ArcPage() {
         {/* Top-right: legend and view controls (the top corners are empty above the semicircles). */}
         <div className="absolute right-3 top-3 z-20 flex flex-col items-end gap-3">
           <div className="flex items-center gap-1 rounded-xl border border-line bg-panel/80 p-1 backdrop-blur">
+          {(['OT', 'NT'] as const).map((tt) => (
+            <button
+              key={tt}
+              type="button"
+              onClick={() => focusTestament(tt)}
+              title={t(`testament.${tt}`)}
+              aria-label={t(`testament.${tt}`)}
+              className="h-9 rounded-lg px-2 text-xs font-semibold tracking-wider text-muted hover:bg-panel-2 hover:text-fg"
+              data-testid={`zoom-${tt}`}
+            >
+              {t(`testament.${tt}.short`)}
+            </button>
+          ))}
           <IconButton label={t('action.zoomIn')} onClick={() => zoom(1 / 3)} data-testid="zoom-in">
             <Icon name="plus" />
           </IconButton>

@@ -46,6 +46,8 @@ export interface RenderParams {
   grow: number;
   /** Whether a highlight set is active (base arcs are dimmed). */
   dimmed: boolean;
+  /** Milder dimming while an arc is hovered. */
+  hoverDim?: boolean;
   /** Transparent background (export). */
   transparent?: boolean;
   background: string;

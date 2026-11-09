@@ -250,6 +250,7 @@ export function ArcView({ onRenderer }: { onRenderer?: (kind: 'webgl' | 'canvas'
         limit,
         grow: s.grow,
         dimmed: !!s.hl,
+        hoverDim: s.hoverArc >= 0,
         background: s.colors?.bg ?? '#08090d',
       });
       // Read-only performance probe (used by the end-to-end performance test).

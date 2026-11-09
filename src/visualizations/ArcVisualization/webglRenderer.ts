@@ -412,7 +412,7 @@ export class WebGLArcRenderer implements ArcRenderer {
       gl.uniform1i(this.ut.uAcc, 1);
       gl.uniform1f(this.ut.uExposure, p.alpha / Math.max(1e-3, this.acc.done || 1));
       gl.uniform1f(this.ut.uInk, ink ? 1 : 0);
-      gl.uniform1f(this.ut.uDim, p.dimmed ? 0.07 : 0);
+      gl.uniform1f(this.ut.uDim, p.dimmed ? 0.07 : p.hoverDim ? 0.3 : 0);
       gl.uniform3f(this.ut.uBg, bg[0], bg[1], bg[2]);
       gl.bindVertexArray(this.emptyVao);
       gl.drawArrays(gl.TRIANGLES, 0, 3);

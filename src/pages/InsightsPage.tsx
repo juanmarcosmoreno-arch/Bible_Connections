@@ -6,9 +6,9 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Statistics } from '../analysis/statistics.ts';
 import { ConnectionList, type ConnectionItem } from '../components/panels/ConnectionList.tsx';
 import { Button, Icon, Segmented, Spinner, Toggle } from '../components/ui/index.tsx';
-import { BOOKS, CHAPTERS, VERSE_BOOK, VERSE_CHAPTER, bookName, formatChapter, formatRange } from '../data/bibleStructure.ts';
+import { BOOKS, CHAPTERS, VERSE_BOOK, bookName, bookSpan, formatChapter, formatRange } from '../data/bibleStructure.ts';
 import { loadNetwork, loadStatistics } from '../data/loader.ts';
-import type { NodeLevel } from '../analysis/aggregate.ts';
+import { nodeOf, type CorrLevel } from '../analysis/correlation.ts';
 import { useCorrelation } from '../hooks/useCorrelation.ts';
 import { CorrelationMatrix, correlationColor, nodeName } from '../visualizations/CorrelationMatrix/CorrelationMatrix.tsx';
 import { useData } from '../hooks/useData.tsx';
@@ -338,45 +338,50 @@ function Correlation() {
   const lang = useApp((s) => s.lang);
   const theme = useApp((s) => s.theme);
   const { cols } = useData();
-  const [level, setLevel] = useState<NodeLevel>('book');
+  const [level, setLevel] = useState<CorrLevel>('book');
+  const [bookId, setBookId] = useState(BOOKS.find((b) => b.code === 'John')!.id);
   const [orderBy, setOrderBy] = useState<'canonical' | 'communities'>('canonical');
   const [useFilters, setUseFilters] = useState(false);
   const [cell, setCell] = useState<[number, number] | null>(null);
-  const { result, computing } = useCorrelation(level, useFilters);
+  const range = useMemo<[number, number] | undefined>(() => (level === 'verse' ? bookSpan(bookId) : undefined), [level, bookId]);
+  const { result, computing } = useCorrelation(level, useFilters, range);
   const [communities, setCommunities] = useState<number[] | null>(null);
   useEffect(() => {
     setCommunities(null);
-    loadNetwork(level).then((f) => setCommunities(f.nodes.map((n) => n.community))).catch(() => {});
+    if (level !== 'verse') loadNetwork(level).then((f) => setCommunities(f.nodes.map((n) => n.community))).catch(() => {});
   }, [level]);
-  const n = level === 'book' ? 66 : CHAPTERS.length;
+  const n = level === 'book' ? 66 : level === 'chapter' ? CHAPTERS.length : range![1] - range![0] + 1;
+  const offset = range ? range[0] : 0;
   const order = useMemo(() => {
     const o = Int32Array.from({ length: n }, (_, i) => i);
-    if (orderBy === 'communities' && communities) o.sort((a, b) => communities[a] - communities[b] || a - b);
+    if (orderBy === 'communities' && communities && level !== 'verse') o.sort((a, b) => communities[a] - communities[b] || a - b);
     return o;
-  }, [n, orderBy, communities]);
+  }, [n, orderBy, communities, level]);
 
+  // Pair details; a and b are row indices (global id = offset + index).
   const pair = useMemo(() => {
-    if (!cell || !result || !cols) return null;
+    if (!cell || !result || !cols || result.n !== n) return null;
     const [a, b] = cell;
-    const node = level === 'book' ? VERSE_BOOK : VERSE_CHAPTER;
+    const ga = offset + a, gb = offset + b;
     let between = 0;
     for (let i = 0; i < cols.count; i++) {
-      const s = node[cols.sourceStart[i]], tt = node[cols.targetStart[i]];
-      if ((s === a && tt === b) || (s === b && tt === a)) between++;
+      const s = nodeOf(level, cols.sourceStart[i]), tt = nodeOf(level, cols.targetStart[i]);
+      if ((s === ga && tt === gb) || (s === gb && tt === ga)) between++;
     }
     const similar = Array.from({ length: result.n }, (_, k) => k)
       .filter((k) => k !== a && !Number.isNaN(result.matrix[a * result.n + k]))
       .sort((x, y) => result.matrix[a * result.n + y] - result.matrix[a * result.n + x])
       .slice(0, 10);
-    return { a, b, r: result.matrix[a * result.n + b], between, similar };
-  }, [cell, result, cols, level]);
+    return { a, b, ga, gb, r: result.matrix[a * result.n + b], between, similar };
+  }, [cell, result, cols, level, n, offset]);
 
   const showInArc = () => {
     if (!pair) return;
     if (level === 'book') {
-      actions.setFilters({ books: [pair.a], targetBooks: [pair.b], bookDirection: 'both' });
+      actions.setFilters({ books: [pair.ga], targetBooks: [pair.gb], bookDirection: 'both' });
       actions.setRoute('arc');
-    } else focusChapter(pair.a);
+    } else if (level === 'chapter') focusChapter(pair.ga);
+    else focusPassage('verse', pair.ga, pair.ga);
   };
   const color = correlationColor(theme);
   const legend = `linear-gradient(90deg, ${Array.from({ length: 11 }, (_, i) => color(i / 5 - 1)).join(', ')})`;
@@ -385,7 +390,7 @@ function Correlation() {
     <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]" data-testid="correlation-tab">
       <Card>
         <div className="mb-3 flex flex-wrap items-center gap-3">
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-lg">
             <Segmented
               value={level}
               onChange={(v) => {
@@ -397,27 +402,47 @@ function Correlation() {
               options={[
                 { value: 'book', label: t('insights.corr.books') },
                 { value: 'chapter', label: t('insights.corr.chapters') },
+                { value: 'verse', label: t('insights.corr.verses') },
               ]}
             />
           </div>
-          <div className="w-56">
-            <Segmented
-              value={orderBy}
-              onChange={setOrderBy}
-              label={t('insights.corr.order')}
-              size="xs"
-              options={[
-                { value: 'canonical', label: t('insights.corr.canonical') },
-                { value: 'communities', label: t('insights.corr.communities') },
-              ]}
-            />
-          </div>
+          {level === 'verse' ? (
+            <select
+              value={bookId}
+              onChange={(e) => {
+                setBookId(Number(e.target.value));
+                setCell(null);
+              }}
+              className="rounded-lg border border-line bg-bg px-2 py-1 text-xs"
+              aria-label={t('explore.chooseBook')}
+              data-testid="correlation-book"
+            >
+              {BOOKS.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name[lang]} ({formatNumber(b.verseCount, lang)})
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="w-56">
+              <Segmented
+                value={orderBy}
+                onChange={setOrderBy}
+                label={t('insights.corr.order')}
+                size="xs"
+                options={[
+                  { value: 'canonical', label: t('insights.corr.canonical') },
+                  { value: 'communities', label: t('insights.corr.communities') },
+                ]}
+              />
+            </div>
+          )}
           <div className="w-64">
             <Toggle checked={useFilters} onChange={setUseFilters} label={<span className="text-xs">{t('network.useFilters')}</span>} />
           </div>
         </div>
-        {result && !computing ? (
-          <CorrelationMatrix matrix={result.matrix} n={result.n} level={level} order={order} theme={theme} lang={lang} selected={cell} onSelect={setCell} />
+        {result && !computing && result.n === n ? (
+          <CorrelationMatrix matrix={result.matrix} n={result.n} offset={offset} level={level} order={order} theme={theme} lang={lang} selected={cell} onSelect={setCell} />
         ) : (
           <div className="flex h-80 items-center justify-center gap-2 text-sm text-muted">
             <Spinner /> {t('insights.corr.computing', { n: formatNumber(n, lang) })}
@@ -430,8 +455,9 @@ function Correlation() {
           <span className="ml-auto">r (Pearson)</span>
         </div>
         <p className="mt-2 text-[11px] leading-relaxed text-muted">{t('insights.corr.help')}</p>
+        {level === 'verse' && <p className="mt-1 text-[11px] leading-relaxed text-muted">{t('insights.corr.verseNote')}</p>}
       </Card>
-      <Card title={pair ? `${nodeName(level, pair.a, lang)} ↔ ${nodeName(level, pair.b, lang)}` : t('insights.correlation')}>
+      <Card title={pair ? `${nodeName(level, pair.ga, lang)} ↔ ${nodeName(level, pair.gb, lang)}` : t('insights.correlation')}>
         {pair && result ? (
           <div data-testid="correlation-pair">
             <div className="grid grid-cols-2 gap-2 text-xs">
@@ -447,12 +473,12 @@ function Correlation() {
             <Button variant="outline" className="mt-3 w-full" onClick={showInArc}>
               <Icon name="arc" size={14} /> {t('action.openArc')}
             </Button>
-            <h3 className="mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wider text-muted">{t('insights.corr.similar', { name: nodeName(level, pair.a, lang) })}</h3>
+            <h3 className="mb-2 mt-4 text-[11px] font-semibold uppercase tracking-wider text-muted">{t('insights.corr.similar', { name: nodeName(level, pair.ga, lang) })}</h3>
             <ol className="space-y-1">
               {pair.similar.map((k) => (
                 <li key={k} className="flex items-center justify-between text-sm">
                   <button type="button" className="hover:text-accent" onClick={() => setCell([pair.a, k])}>
-                    {nodeName(level, k, lang)}
+                    {nodeName(level, offset + k, lang)}
                   </button>
                   <span className="tabular-nums text-xs text-muted">{result.matrix[pair.a * result.n + k].toFixed(3)}</span>
                 </li>

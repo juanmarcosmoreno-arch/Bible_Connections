@@ -122,8 +122,9 @@ canónica, así que *Top N* es siempre el mismo prefijo, nunca una muestra aleat
   testamentos.
 - **Matriz 66 × 66** (filas: libro de origen, columnas: destino) con escala absoluta, normalizada
   y detalle de las conexiones de cada celda.
-- **Correlación de toda la Biblia**: cuadro 66 × 66 (libros) o 1.189 × 1.189 (todos los
-  capítulos) con la r de Pearson entre perfiles de conexión (con qué libros se conecta cada
+- **Correlación de toda la Biblia**: cuadro 66 × 66 (libros), 1.189 × 1.189 (todos los
+  capítulos) o versículo a versículo dentro de un libro (hasta 2.461 × 2.461 en Salmos; toda la
+  Biblia por versículos serían ~967 millones de celdas, inviable en un navegador) con la r de Pearson entre perfiles de conexión (con qué libros se conecta cada
   pasaje, sin contar el propio), en orden canónico o por comunidades, con la lista de pasajes
   más parecidos. Se calcula en un Web Worker y puede usar los filtros del Arco.
 - **Comparación de testamentos**: flujo AT ↔ NT (p. ej. Isaías → libros del NT; Mateo → AT).
@@ -306,7 +307,7 @@ libros forman 3 comunidades: Nuevo Testamento; Sabiduría, Profetas y Apocalipsi
 
 ## Pruebas
 
-- **Unitarias (Vitest, 82 pruebas, ~5 s)** sobre la base completa: parseo de referencias y rangos,
+- **Unitarias (Vitest, 83 pruebas, ~6 s)** sobre la base completa: parseo de referencias y rangos,
   validación de libros, posiciones globales, formato binario, importación sin pérdidas (cada línea
   del archivo original presente exactamente una vez), integridad referencial, filtros por
   testamento y libro, votos negativos, clases de distancia, Top N determinista, grados por

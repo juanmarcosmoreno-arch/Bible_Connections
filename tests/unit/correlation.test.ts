@@ -47,3 +47,18 @@ describe('correlation of connection profiles', () => {
     expect(mc.length).toBe(1189 * 1189);
   });
 });
+
+describe('verse-level correlation inside one book', () => {
+  const cols = loadColumns();
+  it('computes the largest book (Psalms, 2,461 verses) quickly', async () => {
+    const { bookSpan } = await import('../../src/data/bibleStructure.ts');
+    const ps = bookByCode('Ps')!;
+    const range = bookSpan(ps.id);
+    const t0 = performance.now();
+    const m = correlationMatrix(connectionProfiles(cols, 'verse', null, range), 'verse', range[0]);
+    const ms = performance.now() - t0;
+    expect(m.length).toBe(ps.verseCount ** 2);
+    expect(m[0]).toBe(1);
+    expect(ms).toBeLessThan(5000);
+  });
+});

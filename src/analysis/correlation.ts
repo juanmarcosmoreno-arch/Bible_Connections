@@ -7,35 +7,53 @@
  * of B themselves (otherwise the large number of references inside a book would dominate).
  * r = 1: same pattern of connections; r = 0: unrelated; r < 0: opposite patterns.
  */
-import { BOOKS, CHAPTERS, VERSE_BOOK, VERSE_CHAPTER } from '../data/bibleStructure.ts';
+import { BOOKS, CHAPTERS, TOTAL_VERSES, VERSE_BOOK, VERSE_CHAPTER } from '../data/bibleStructure.ts';
 import type { ReferenceColumns } from '../data/format.ts';
-import type { NodeLevel } from './aggregate.ts';
 
 const NB = 66;
 
-export function connectionProfiles(cols: ReferenceColumns, level: NodeLevel, indices: ArrayLike<number> | null = null): Float64Array {
-  const n = level === 'book' ? NB : CHAPTERS.length;
-  const node = level === 'book' ? VERSE_BOOK : VERSE_CHAPTER;
+/** Book, chapter or verse level. Verse-level matrices are limited to a range (one book). */
+export type CorrLevel = 'book' | 'chapter' | 'verse';
+
+export function nodeCountFor(level: CorrLevel): number {
+  return level === 'book' ? NB : level === 'chapter' ? CHAPTERS.length : TOTAL_VERSES;
+}
+
+/** Node (book, chapter or verse) of a verse index. */
+export function nodeOf(level: CorrLevel, verse: number): number {
+  return level === 'book' ? VERSE_BOOK[verse] : level === 'chapter' ? VERSE_CHAPTER[verse] : verse;
+}
+
+/** Book of a node. */
+export function bookOfNode(level: CorrLevel, node: number): number {
+  return level === 'book' ? node : level === 'chapter' ? CHAPTERS[node].bookId : VERSE_BOOK[node];
+}
+
+/**
+ * Profiles of the nodes [start, end] (default: all nodes of the level): n × 66 counts.
+ */
+export function connectionProfiles(cols: ReferenceColumns, level: CorrLevel, indices: ArrayLike<number> | null = null, range?: [number, number]): Float64Array {
+  const [lo, hi] = range ?? [0, nodeCountFor(level) - 1];
+  const n = hi - lo + 1;
   const prof = new Float64Array(n * NB);
   const count = indices ? indices.length : cols.count;
   for (let k = 0; k < count; k++) {
     const i = indices ? indices[k] : k;
     const s = cols.sourceStart[i], t = cols.targetStart[i];
-    prof[node[s] * NB + VERSE_BOOK[t]]++;
-    prof[node[t] * NB + VERSE_BOOK[s]]++;
+    const a = nodeOf(level, s) - lo, b = nodeOf(level, t) - lo;
+    if (a >= 0 && a < n) prof[a * NB + VERSE_BOOK[t]]++;
+    if (b >= 0 && b < n) prof[b * NB + VERSE_BOOK[s]]++;
   }
   return prof;
 }
 
-/** Book of each node. */
-function bookOf(level: NodeLevel, n: number): Int32Array {
-  return Int32Array.from({ length: n }, (_, i) => (level === 'book' ? i : CHAPTERS[i].bookId));
-}
-
-/** n × n Pearson correlations (Float32, symmetric, diagonal 1, NaN when a profile is constant). */
-export function correlationMatrix(prof: Float64Array, level: NodeLevel): Float32Array {
+/**
+ * m × m Pearson correlations of the profiles (Float32, symmetric, diagonal 1, NaN when a
+ * profile is constant, e.g. a verse without connections). `offset` is the node id of row 0.
+ */
+export function correlationMatrix(prof: Float64Array, level: CorrLevel, offset = 0): Float32Array {
   const n = prof.length / NB;
-  const own = bookOf(level, n);
+  const own = Int32Array.from({ length: n }, (_, i) => bookOfNode(level, offset + i));
   const out = new Float32Array(n * n);
   // Precompute sums over all 66 books so that leaving out two books is O(1).
   const sum = new Float64Array(n), sum2 = new Float64Array(n);
@@ -71,10 +89,6 @@ export function correlationMatrix(prof: Float64Array, level: NodeLevel): Float32
     }
   }
   return out;
-}
-
-export function nodeLabelBook(level: NodeLevel, i: number): number {
-  return level === 'book' ? i : CHAPTERS[i].bookId;
 }
 
 export { BOOKS };

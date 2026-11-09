@@ -177,6 +177,9 @@ test.describe('Other views', () => {
     await expect(page.getByTestId('correlation-pair')).toContainText('Luke');
     await page.getByRole('radio', { name: 'Chapters (whole Bible, 1,189)' }).click();
     await expect(page.getByTestId('correlation-matrix').locator('canvas')).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('radio', { name: 'Verses (one book)' }).click();
+    await page.getByTestId('correlation-book').selectOption({ label: 'Psalms (2,461)' });
+    await expect(page.getByTestId('correlation-matrix').locator('canvas')).toBeVisible({ timeout: 30_000 });
     await page.getByRole('radio', { name: 'Testaments' }).click();
     await expect(page.getByTestId('testament-flow')).toBeVisible();
     await expect(page.getByText('Strongest links of Isaiah')).toBeVisible();

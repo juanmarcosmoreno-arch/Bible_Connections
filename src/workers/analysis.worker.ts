@@ -3,12 +3,14 @@
 import type { NodeLevel } from '../analysis/aggregate.ts';
 import type { ReferenceColumns } from '../data/format.ts';
 import { buildNetworkFile } from '../graph/networkFile.ts';
-import { connectionProfiles, correlationMatrix } from '../analysis/correlation.ts';
+import { connectionProfiles, correlationMatrix, type CorrLevel } from '../analysis/correlation.ts';
 
 export interface NetworkRequest {
   id: number;
   task?: 'network' | 'correlation';
   level: NodeLevel;
+  corrLevel?: CorrLevel;
+  range?: [number, number];
   cols: ReferenceColumns;
   indices: Uint32Array | null;
 }
@@ -17,12 +19,13 @@ export interface NetworkRequest {
 export const CHAPTER_PIVOTS = 128;
 
 self.onmessage = (e: MessageEvent<NetworkRequest>) => {
-  const { id, level, cols, indices, task } = e.data;
+  const { id, level, cols, indices, task, corrLevel, range } = e.data;
   try {
     const t0 = performance.now();
     if (task === 'correlation') {
-      const prof = connectionProfiles(cols, level, indices);
-      const matrix = correlationMatrix(prof, level);
+      const cl = corrLevel ?? level;
+      const prof = connectionProfiles(cols, cl, indices, range);
+      const matrix = correlationMatrix(prof, cl, range ? range[0] : 0);
       self.postMessage({ id, matrix, profiles: prof, ms: performance.now() - t0 }, [matrix.buffer, prof.buffer]);
       return;
     }

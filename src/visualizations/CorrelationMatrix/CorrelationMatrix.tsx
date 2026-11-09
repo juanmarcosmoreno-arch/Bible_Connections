@@ -5,8 +5,8 @@
  */
 import { interpolateLab, piecewise, rgb } from 'd3';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { NodeLevel } from '../../analysis/aggregate.ts';
-import { BOOKS, CHAPTERS, formatChapter, type Lang } from '../../data/bibleStructure.ts';
+import type { CorrLevel } from '../../analysis/correlation.ts';
+import { BOOKS, CHAPTERS, VERSE_CHAPTER, formatChapter, formatVerse, type Lang } from '../../data/bibleStructure.ts';
 
 export function correlationColor(theme: 'dark' | 'light'): (r: number) => string {
   const neutral = theme === 'dark' ? '#14161d' : '#f2f2ee';
@@ -15,13 +15,17 @@ export function correlationColor(theme: 'dark' | 'light'): (r: number) => string
   return (r: number) => (Number.isNaN(r) ? neutral : r >= 0 ? pos(Math.min(1, r)) : neg(Math.min(1, -r)));
 }
 
-export function nodeName(level: NodeLevel, i: number, lang: Lang, short = false): string {
-  return level === 'book' ? (short ? BOOKS[i].short[lang] : BOOKS[i].name[lang]) : formatChapter(i, lang, short);
+/** Name of a node by its global id (book id, chapter id or verse index). */
+export function nodeName(level: CorrLevel, i: number, lang: Lang, short = false): string {
+  if (level === 'book') return short ? BOOKS[i].short[lang] : BOOKS[i].name[lang];
+  if (level === 'chapter') return formatChapter(i, lang, short);
+  return formatVerse(i, lang, short);
 }
 
 export function CorrelationMatrix({
   matrix,
   n,
+  offset = 0,
   level,
   order,
   theme,
@@ -31,7 +35,8 @@ export function CorrelationMatrix({
 }: {
   matrix: Float32Array;
   n: number;
-  level: NodeLevel;
+  offset?: number;
+  level: CorrLevel;
   order: Int32Array;
   theme: 'dark' | 'light';
   lang: Lang;
@@ -108,6 +113,33 @@ export function CorrelationMatrix({
         ctx.fillText(label, 0, 0);
         ctx.restore();
       }
+    } else if (level === 'verse') {
+      // Chapter boundaries inside the book.
+      ctx.strokeStyle = fg;
+      ctx.lineWidth = 0.5;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      let last = -Infinity;
+      for (let i = 0; i < n; i++) {
+        const g = offset + i;
+        if (i > 0 && VERSE_CHAPTER[g] === VERSE_CHAPTER[g - 1]) continue;
+        const p = LABEL + i * cell;
+        ctx.globalAlpha = 0.15;
+        ctx.beginPath();
+        ctx.moveTo(p, LABEL);
+        ctx.lineTo(p, size);
+        ctx.moveTo(LABEL, p);
+        ctx.lineTo(size, p);
+        ctx.stroke();
+        const len = CHAPTERS[VERSE_CHAPTER[g]].verseCount;
+        const mid = p + (len * cell) / 2;
+        if (mid - last > 13) {
+          ctx.globalAlpha = 1;
+          ctx.fillText(String(CHAPTERS[VERSE_CHAPTER[g]].number), LABEL - 3, mid);
+          last = mid;
+        }
+      }
+      ctx.globalAlpha = 1;
     } else {
       // Book boundaries (when in canonical order) with labels where they fit.
       const canonical = order.every((v, i) => v === i);
@@ -144,7 +176,7 @@ export function CorrelationMatrix({
       const w = Math.max(4, cell);
       ctx.strokeRect(LABEL + ib * cell - (w - cell) / 2 - 1, LABEL + ia * cell - (w - cell) / 2 - 1, w + 2, w + 2);
     }
-  }, [image, size, LABEL, n, order, lang, level, selected, theme]);
+  }, [image, size, LABEL, n, order, lang, level, selected, theme, offset]);
 
   const cellAt = (e: { clientX: number; clientY: number }) => {
     const r = canvas.current!.getBoundingClientRect();
@@ -171,7 +203,7 @@ export function CorrelationMatrix({
       {hover && (
         <div className="pointer-events-none absolute z-10 rounded-md border border-line bg-panel/95 px-2 py-1 text-xs shadow" style={{ left: Math.min(hover.x + 12, size - 190), top: hover.y + 12 }}>
           <div className="font-medium">
-            {nodeName(level, hover.a, lang)} ↔ {nodeName(level, hover.b, lang)}
+            {nodeName(level, offset + hover.a, lang)} ↔ {nodeName(level, offset + hover.b, lang)}
           </div>
           <div className="tabular-nums text-muted">r = {Number.isNaN(matrix[hover.a * n + hover.b]) ? '—' : matrix[hover.a * n + hover.b].toFixed(3)}</div>
         </div>

@@ -57,6 +57,11 @@ export async function fetchReferenceBinary(
     try {
       const res = await cachedFetch(gzUrl);
       const gz = await readWithProgress(res, sizes.gz, onProgress);
+      // If a server already decoded the gzip stream (Content-Encoding), use the bytes as they are.
+      if (gz.byteLength === sizes.raw || gz[0] !== 0x1f || gz[1] !== 0x8b) {
+        if (gz.byteLength === sizes.raw) return gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength) as ArrayBuffer;
+        throw new Error('unexpected compressed payload');
+      }
       const stream = new Blob([gz as BlobPart]).stream().pipeThrough(new DecompressionStream('gzip'));
       return await new Response(stream).arrayBuffer();
     } catch (err) {

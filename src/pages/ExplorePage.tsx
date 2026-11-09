@@ -198,6 +198,7 @@ function ChapterText({ chapterId, degrees }: { chapterId: number; degrees: Retur
     }
   }, [sel, status]);
 
+  if (status === 'error') return <p className="mt-8 text-sm text-danger">{t('panel.textUnavailable')}</p>;
   if (status !== 'ready')
     return (
       <div className="mt-8 flex items-center gap-2 text-sm text-muted">

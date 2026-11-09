@@ -136,7 +136,8 @@ export function importCrossReferences(path = SOURCE_FILE): ImportResult {
     records: sorted,
     report,
     binFile: `references/refs.${hash}.bin`,
-    gzFile: `references/refs.${hash}.bin.gz`,
+    // Neutral extension: some servers would otherwise add "Content-Encoding: gzip".
+    gzFile: `references/refs.${hash}.gzbin`,
     bytes: buf.byteLength,
     gzBytes: gz.byteLength,
     sourceSha256,

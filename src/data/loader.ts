@@ -17,6 +17,7 @@ export function loadJSON<T>(path: string): Promise<T> {
   if (!memo.has(path)) {
     const p = fetch(DATA_BASE + path).then((r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status} for ${path}`);
+      if ((r.headers.get('content-type') ?? '').includes('text/html')) throw new Error(`Missing data file ${path}`);
       return r.json() as Promise<T>;
     });
     p.catch(() => memo.delete(path));

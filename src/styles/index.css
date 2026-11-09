@@ -101,3 +101,23 @@ input[type='range'] {
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in { animation: none; }
 }
+
+/* Study sheet: hidden on screen, the only thing printed. */
+#print-root {
+  display: none;
+}
+@media print {
+  html, body { overflow: visible !important; height: auto !important; background: #fff !important; color: #000 !important; }
+  #root { display: none !important; }
+  #print-root { display: block; }
+  .screen-only { display: none; }
+}
+.study-sheet { font-family: Georgia, 'Times New Roman', serif; color: #111; max-width: 720px; margin: 0 auto; padding: 24px; line-height: 1.5; }
+.study-sheet h1 { font-family: 'Inter Variable', Inter, sans-serif; font-size: 22px; margin: 0 0 4px; }
+.study-sheet h2 { font-family: 'Inter Variable', Inter, sans-serif; font-size: 16px; margin: 22px 0 4px; border-top: 1px solid #ccc; padding-top: 12px; }
+.study-sheet h3 { font-family: 'Inter Variable', Inter, sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #555; margin: 10px 0 2px; }
+.study-sheet .meta { font-family: 'Inter Variable', Inter, sans-serif; font-size: 11px; color: #666; }
+.study-sheet .note { margin-top: 8px; padding: 8px 10px; background: #f3f3f0; border-left: 3px solid #999; font-size: 13px; white-space: pre-wrap; }
+.study-sheet ul { margin: 2px 0 0 18px; padding: 0; font-family: 'Inter Variable', Inter, sans-serif; font-size: 12px; columns: 2; }
+.study-sheet section { break-inside: avoid-page; }
+.study-sheet .footer { margin-top: 28px; }

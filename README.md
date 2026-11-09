@@ -99,6 +99,20 @@ TSK** y **9.775 fueron agregadas por OpenBible.info**. El filtro *Fuente* permit
 del TSK o sólo las agregadas. Las 63.779 referencias de Harrison y Römhild (2007) no están
 publicadas, por lo que no se pueden comparar. Detalle del método en `data-source/README.md`.
 
+### Herramientas de estudio y descubrimiento
+- **Camino entre dos pasajes** (Red → Camino): la cadena más corta de referencias que une dos
+  versículos, con el texto de cada paso, la fuente de cada referencia y hasta dos alternativas
+  que no repiten los pasos intermedios. Se puede ver dibujada en el Arco.
+- **Diagrama de cuerdas** (Análisis → Cuerdas): los 66 libros en círculo; cada cinta une dos
+  libros con un ancho proporcional a sus referencias.
+- **Personas y lugares** (Red → Personas y lugares): red de co-apariciones en un mismo
+  versículo (como la segunda visualización de Harrison), con 4.223 personas, lugares y grupos
+  desambiguados de STEPBible TIPNR. Incluye buscador, red ego y la lista de versículos donde aparece
+  cada nombre. Los nombres y descripciones están en inglés, como en la fuente.
+- **Mi estudio**: favoritos (pasajes y conexiones) y notas por pasaje, guardados en el navegador;
+  hoja de estudio imprimible o en PDF con textos, notas y principales conexiones; exportar e
+  importar en JSON.
+
 ### Filtros
 Fuente (todas, del TSK, agregadas por OpenBible) · Testamento (todas, AT→AT, NT→NT, AT↔NT) · uno o varios libros, con dirección *desde / hacia /
 ambas* y modo *entre dos grupos de libros* ·
@@ -367,6 +381,11 @@ todos los recursos y datos se resuelven con `import.meta.env.BASE_URL`.
 Las licencias del código, los datos y los textos son **independientes**:
 
 - **Código**: MIT (`LICENSE`).
+- **Personas y lugares**: datos derivados de *TIPNR — Translators Individualised Proper Names with
+  all References*, STEPBible.org, basado en trabajo de Tyndale House Cambridge, **CC BY 4.0**
+  (<https://github.com/STEPBible/STEPBible-Data>). Se incluye sólo un subconjunto derivado
+  (nombre, tipo, descripción breve y versículos), como pide STEPBible; cambios descritos en
+  `data-source/names/tipnr-derived.json`.
 - **Treasury of Scripture Knowledge**: dominio público (módulo SWORD "TSK" de CrossWire), usado
   para declarar la procedencia de cada referencia.
 - **Referencias cruzadas**: © OpenBible.info, **[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)**.

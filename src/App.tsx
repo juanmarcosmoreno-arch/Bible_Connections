@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { AboutDialog } from './components/dialogs/AboutDialog.tsx';
 import { SettingsDialog } from './components/dialogs/SettingsDialog.tsx';
+import { StudyDialog } from './components/dialogs/StudyDialog.tsx';
 import { MobileNav, TopBar } from './components/navigation/TopBar.tsx';
 import { Spinner } from './components/ui/index.tsx';
 import { DataProvider, useData } from './hooks/useData.tsx';
@@ -97,6 +98,7 @@ export function App() {
       </div>
       <SettingsDialog />
       <AboutDialog />
+      <StudyDialog />
       {dialog === 'export' && (
         <Suspense fallback={null}>
           <ExportDialog />

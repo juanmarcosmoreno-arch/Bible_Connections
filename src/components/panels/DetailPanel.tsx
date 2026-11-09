@@ -27,6 +27,7 @@ import { arcColor, categorical } from '../../utils/colors.ts';
 import { Icon, IconButton, Segmented, Toggle } from '../ui/index.tsx';
 import { ConnectionList, type ConnectionItem } from './ConnectionList.tsx';
 import { SourceTag, useSourceLabel } from '../SourceTag.tsx';
+import { study, studyId, useStudyItems } from '../../state/study.ts';
 import { PassageText } from './PassageText.tsx';
 
 type Tab = 'passage' | 'connections' | 'network' | 'context';
@@ -93,6 +94,9 @@ function SelectionHeader({ selection }: { selection: Selection }) {
   const t = useT();
   const lang = useApp((s) => s.lang);
   const { cols } = useData();
+  const items = useStudyItems();
+  const sid = studyId(selection, cols);
+  const saved = !!sid && items.some((i) => i.id === sid);
   let title: ReactNode = '';
   let unit = '';
   let prev: (() => void) | null = null;
@@ -156,6 +160,11 @@ function SelectionHeader({ selection }: { selection: Selection }) {
       <IconButton label={nextLabel} onClick={next ?? undefined} disabled={!next} data-testid="next-passage">
         <Icon name="right" />
       </IconButton>
+      {sid && (
+        <IconButton label={saved ? t('study.saved') : t('study.save')} active={saved} onClick={() => study.toggle(sid, selection.kind === 'passage' ? selection.unit : undefined)} data-testid="study-toggle">
+          <Icon name={saved ? 'bookmark-fill' : 'bookmark'} className={saved ? 'text-accent' : ''} />
+        </IconButton>
+      )}
       <IconButton label={t('action.hidePanel')} onClick={() => actions.setPanelOpen(false)} className="hidden lg:inline-flex" data-testid="hide-panel">
         <Icon name="panel" />
       </IconButton>
@@ -237,6 +246,7 @@ function PassageBody({ sel, tab }: { sel: Extract<Selection, { kind: 'passage' }
     return (
       <div>
         <PassageText start={start} end={showEnd} maxVerses={sel.unit === 'chapter' ? 176 : 40} />
+        <StudyNote sel={sel} />
         {showEnd < end && (
           <a href="#/explore" className="mt-2 inline-flex items-center gap-1 text-sm text-accent hover:underline">
             {t('action.openExplore')} <Icon name="arrow" size={14} />
@@ -510,6 +520,7 @@ function ReferenceBody({ index: i, tab }: { index: number; tab: Tab }) {
           <div className="text-[11px] text-muted">{t('source.label')}</div>
           <div className="text-sm">{sourceLabel(cols.origin[i])}</div>
         </div>
+        <StudyNote sel={{ kind: 'reference', index: i }} />
       </div>
     );
 
@@ -611,5 +622,36 @@ export function PathSteps({ verses, refs }: { verses: number[]; refs: number[] }
       ))}
       <li className="pt-1 text-[11px] text-muted">{t('path.steps', { n: refs.length })}</li>
     </ol>
+  );
+}
+
+/** Personal note for the current selection (creates a study item when you start typing). */
+function StudyNote({ sel }: { sel: Selection }) {
+  const t = useT();
+  const { cols } = useData();
+  const items = useStudyItems();
+  const sid = studyId(sel, cols);
+  const current = items.find((i) => i.id === sid)?.note ?? '';
+  const [draft, setDraft] = useState(current);
+  useEffect(() => setDraft(current), [sid]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!sid) return null;
+  return (
+    <div className="mt-3">
+      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted" htmlFor="study-note">
+        {t('study.notes')}
+      </label>
+      <textarea
+        id="study-note"
+        value={draft}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          study.setNote(sid, e.target.value, sel.kind === 'passage' ? sel.unit : undefined);
+        }}
+        rows={3}
+        placeholder={t('study.notesPlaceholder')}
+        className="w-full resize-y rounded-lg border border-line bg-bg/50 px-3 py-2 text-sm outline-none focus:border-accent/70"
+        data-testid="study-note"
+      />
+    </div>
   );
 }

@@ -23,7 +23,7 @@ export interface Settings {
   bars: 'verses' | 'refs';
 }
 
-export type Dialog = null | 'settings' | 'about' | 'export' | 'search';
+export type Dialog = null | 'settings' | 'about' | 'export' | 'search' | 'study';
 
 export interface AppState {
   route: Route;

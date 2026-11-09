@@ -50,6 +50,13 @@ export function AboutDialog() {
             CrossWire TSK
           </a>
         </p>
+        <H>{t('network.mode.names')}</H>
+        <p>
+          {t('names.source')}{' '}
+          <a className="text-accent hover:underline" href="https://github.com/STEPBible/STEPBible-Data" target="_blank" rel="noreferrer">
+            STEPBible-Data
+          </a>
+        </p>
         <H>{t('about.texts')}</H>
         <ul className="space-y-2">
           {translations.map((tr) => (

@@ -55,6 +55,9 @@ export function TopBar() {
         >
           {lang === 'en' ? 'ES' : 'EN'}
         </button>
+        <IconButton label={t('study.title')} onClick={() => actions.openDialog('study')} data-testid="open-study">
+          <Icon name="bookmark" />
+        </IconButton>
         <IconButton label={t('action.settings')} onClick={() => actions.openDialog('settings')} data-testid="open-settings">
           <Icon name="settings" />
         </IconButton>

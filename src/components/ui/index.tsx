@@ -137,6 +137,10 @@ const PATHS: Record<string, string> = {
   network: 'M6 4a3 3 0 1 1-1 5.8V14a3 3 0 1 1-2 0V9.8A3 3 0 0 1 6 4Zm12 6a3 3 0 1 1-2.8 4H9v-2h6.2A3 3 0 0 1 18 10Z',
   arc: 'M2 18h20v2H2v-2Zm2-1a8 8 0 0 1 16 0h-2a6 6 0 0 0-12 0H4Zm4 0a4 4 0 0 1 8 0h-2a2 2 0 0 0-4 0H8Z',
   chart: 'M4 20V10h3v10H4Zm6.5 0V4h3v16h-3ZM17 20v-7h3v7h-3Z',
+  bookmark: 'M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Zm1 2v12.6l5-2.9 5 2.9V5H7Z',
+  'bookmark-fill': 'M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z',
+  print: 'M7 3h10v4H7V3Zm-3 5h16a1 1 0 0 1 1 1v7h-4v4H7v-4H3V9a1 1 0 0 1 1-1Zm5 8v2h6v-2H9Zm8-5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z',
+  trash: 'M9 3h6l1 2h4v2H4V5h4l1-2Zm-3 6h12l-1 12H7L6 9Z',
 };
 
 export function Icon({ name, size = 18, className = '' }: { name: keyof typeof PATHS | string; size?: number; className?: string }) {

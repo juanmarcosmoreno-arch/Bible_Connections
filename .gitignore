@@ -1,0 +1,8 @@
+node_modules/
+dist/
+public/data/
+*.tsbuildinfo
+test-results/
+playwright-report/
+.DS_Store
+data-source/.cache/

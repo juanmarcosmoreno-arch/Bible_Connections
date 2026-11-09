@@ -1,0 +1,12 @@
+{
+  "code": "RV1909",
+  "name": "Reina-Valera 1909",
+  "language": "es",
+  "license": "Public Domain",
+  "licenseNote": "Listed as Public Domain / Dominio Público by eBible.org (see spaRV1909_about.htm).",
+  "source": "eBible.org, Santa Biblia — Reina Valera 1909 (spaRV1909), VPL export",
+  "sourceUrl": "https://ebible.org/find/details.php?id=spaRV1909",
+  "file": "spaRV1909_vpl.txt",
+  "versification": "Native RV1909 verse division, padded by eBible.org to KJV verse counts. Aligned to KJV numbering with alignment.json (Strong's-number alignment, scripts/align-translation.ts).",
+  "bracketsMeaning": "Words in [brackets] were supplied by the translators (printed in italics in the original)."
+}

@@ -1,0 +1,10 @@
+{
+ "translation": "eng-web",
+ "method": "Manual: the WEB prints the doxology of Romans (KJV 16:25-27) at the end of chapter 14 (14:24-26), following the Majority Text. Verified by reading both texts.",
+ "identityVerses": 31099,
+ "mappings": [
+  {"kjv": "ROM 16:25", "text": ["ROM 14:24"], "shared": false, "score": 1},
+  {"kjv": "ROM 16:26", "text": ["ROM 14:25"], "shared": false, "score": 1},
+  {"kjv": "ROM 16:27", "text": ["ROM 14:26"], "shared": false, "score": 1}
+ ]
+}

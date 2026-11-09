@@ -1,0 +1,12 @@
+{
+  "code": "WEB",
+  "name": "World English Bible",
+  "language": "en",
+  "license": "Public Domain",
+  "licenseNote": "Dedicated to the Public Domain by its translators. \"World English Bible\" is a trademark of eBible.org; modified texts must not use that name (see eng-web_about.htm). The text here is unmodified.",
+  "source": "eBible.org, World English Bible 2020 stable text (eng-web), VPL export",
+  "sourceUrl": "https://ebible.org/find/details.php?id=eng-web",
+  "file": "eng-web_vpl.txt",
+  "versification": "KJV-style verse numbering. Deuterocanonical books in the source file are not used.",
+  "bracketsMeaning": null
+}

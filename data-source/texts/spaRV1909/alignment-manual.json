@@ -1,0 +1,9 @@
+{
+ "method": "Manual overrides, verified by reading the RV1909 and KJV texts. In RV1909 the content of KJV 2 Sam 20:26 and Acts 19:41 is printed at the end of the previous verse.",
+ "mappings": [
+  {"kjv": "2SA 20:25", "text": ["2SA 20:25"], "shared": true, "score": 1},
+  {"kjv": "2SA 20:26", "text": ["2SA 20:25"], "shared": true, "score": 1},
+  {"kjv": "ACT 19:40", "text": ["ACT 19:40"], "shared": true, "score": 1},
+  {"kjv": "ACT 19:41", "text": ["ACT 19:40"], "shared": true, "score": 1}
+ ]
+}

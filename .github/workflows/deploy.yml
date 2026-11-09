@@ -1,8 +1,8 @@
 name: Build, test and deploy to GitHub Pages
 
 on:
+  # Every push and pull request is built and tested; only `main` is deployed.
   push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 

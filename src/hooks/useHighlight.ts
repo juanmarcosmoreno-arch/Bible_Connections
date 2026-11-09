@@ -11,6 +11,7 @@ export function useHighlight(): Uint32Array | null {
   return useMemo(() => {
     if (!cols || !filtered || !selection) return null;
     if (selection.kind === 'reference') return Uint32Array.of(selection.index);
+    if (selection.kind === 'path') return Uint32Array.from(selection.refs);
     return referencesTouching(cols, filtered, selection.start, selection.end, direction);
   }, [cols, filtered, selection, direction]);
 }

@@ -152,6 +152,7 @@ export function ArcView({ onRenderer }: { onRenderer?: (kind: 'webgl' | 'canvas'
   useEffect(() => {
     const el = containerRef.current!;
     const ro = new ResizeObserver(() => {
+      if (!glRef.current || !overlayRef.current) return; // unmounted
       const w = el.clientWidth, h = el.clientHeight;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const s = st.current;
@@ -271,6 +272,7 @@ export function ArcView({ onRenderer }: { onRenderer?: (kind: 'webgl' | 'canvas'
       if (s.colors) {
         const markers: AxisMarker[] = [];
         if (sel?.kind === 'passage') markers.push({ start: sel.start, end: sel.end });
+        else if (sel?.kind === 'path') sel.verses.forEach((v, k) => markers.push({ start: v, end: v, color: k === 0 || k === sel.verses.length - 1 ? undefined : s.colors!.fg }));
         else if (sel?.kind === 'reference' && cols) {
           markers.push({ start: cols.sourceStart[sel.index], end: cols.sourceEnd[sel.index] });
           markers.push({ start: cols.targetStart[sel.index], end: cols.targetEnd[sel.index], color: s.colors.fg });

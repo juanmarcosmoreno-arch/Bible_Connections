@@ -11,6 +11,9 @@ import { loadNetwork, loadStatistics } from '../data/loader.ts';
 import { nodeOf, type CorrLevel } from '../analysis/correlation.ts';
 import { useCorrelation } from '../hooks/useCorrelation.ts';
 import { CorrelationMatrix, correlationColor, nodeName } from '../visualizations/CorrelationMatrix/CorrelationMatrix.tsx';
+import { ChordDiagram, symmetricCounts } from '../visualizations/ChordDiagram/ChordDiagram.tsx';
+import { GENRES } from '../data/books.ts';
+import { categorical } from '../utils/colors.ts';
 import { useData } from '../hooks/useData.tsx';
 import { formatNumber, useT } from '../i18n/index.ts';
 import { actions, useApp } from '../state/appState.ts';
@@ -21,7 +24,7 @@ import { NT_BOOKS, OT_BOOKS, TestamentFlow, flowCounts, type FlowDirection } fro
 import { arcColor } from '../utils/colors.ts';
 import { downloadText } from '../utils/download.ts';
 
-type Tab = 'overview' | 'matrix' | 'correlation' | 'testaments';
+type Tab = 'overview' | 'matrix' | 'correlation' | 'chord' | 'testaments';
 
 export default function InsightsPage() {
   const t = useT();
@@ -38,7 +41,7 @@ export default function InsightsPage() {
             <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t('insights.title')}</h1>
             <p className="mt-1 text-sm text-muted">{t('insights.note.anchor')}</p>
           </div>
-          <div className="w-full max-w-xl">
+          <div className="w-full max-w-2xl">
             <Segmented
               value={tab}
               onChange={setTab}
@@ -47,6 +50,7 @@ export default function InsightsPage() {
                 { value: 'overview', label: t('insights.overview') },
                 { value: 'matrix', label: t('insights.matrix') },
                 { value: 'correlation', label: t('insights.correlation') },
+                { value: 'chord', label: t('insights.chord') },
                 { value: 'testaments', label: t('insights.testaments') },
               ]}
             />
@@ -62,6 +66,8 @@ export default function InsightsPage() {
           <Matrix stats={stats} />
         ) : tab === 'correlation' ? (
           <Correlation />
+        ) : tab === 'chord' ? (
+          <Chords stats={stats} />
         ) : (
           <Testaments stats={stats} />
         )}
@@ -487,6 +493,70 @@ function Correlation() {
           </div>
         ) : (
           <p className="text-sm text-muted">{t('insights.corr.select')}</p>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function Chords({ stats }: { stats: Statistics }) {
+  const t = useT();
+  const lang = useApp((s) => s.lang);
+  const { cols, filtered } = useData();
+  const [selected, setSelected] = useState<number | null>(BOOKS.find((b) => b.code === 'Isa')!.id);
+  const [useFilters, setUseFilters] = useState(false);
+  const [minRibbon, setMinRibbon] = useState(20);
+  const counts = useMemo(() => {
+    if (!useFilters || !cols || !filtered) return stats.matrix.counts;
+    const c = new Array(66 * 66).fill(0);
+    for (const i of filtered) c[VERSE_BOOK[cols.sourceStart[i]] * 66 + VERSE_BOOK[cols.targetStart[i]]]++;
+    return c;
+  }, [useFilters, cols, filtered, stats]);
+  const partners = useMemo(() => {
+    if (selected == null) return [];
+    const sym = symmetricCounts(counts);
+    return sym[selected].map((v, b) => ({ b, v })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 15);
+  }, [counts, selected]);
+  const showInArc = () => {
+    if (selected == null) return;
+    actions.setFilters({ books: [selected], targetBooks: [], bookDirection: 'both' });
+    actions.setRoute('arc');
+  };
+  return (
+    <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" data-testid="chord-tab">
+      <Card>
+        <div className="mb-3 flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2 text-xs text-muted">
+            {t('insights.chord.min')}: {minRibbon}
+            <input type="range" min={0} max={300} step={10} value={minRibbon} onChange={(e) => setMinRibbon(Number(e.target.value))} aria-label={t('insights.chord.min')} />
+          </label>
+          <div className="w-64">
+            <Toggle checked={useFilters} onChange={setUseFilters} label={<span className="text-xs">{t('network.useFilters')}</span>} />
+          </div>
+        </div>
+        <div className="flex justify-center text-fg">
+          <ChordDiagram counts={counts} selected={selected} onSelect={setSelected} lang={lang} minRibbon={minRibbon} />
+        </div>
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted">
+          {GENRES.map((g, i) => (
+            <span key={g} className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-sm" style={{ background: categorical(i) }} />
+              {t(`genre.${g}`)}
+            </span>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] leading-relaxed text-muted">{t('insights.chord.help')}</p>
+      </Card>
+      <Card title={selected != null ? t('insights.testaments.top', { name: bookName(selected, lang) }) : t('insights.chord')}>
+        {selected != null ? (
+          <>
+            <RankBars lang={lang} items={partners.map((p) => ({ key: p.b, label: bookName(p.b, lang), value: p.v }))} onPick={(k) => setSelected(Number(k))} />
+            <Button variant="outline" className="mt-4 w-full" onClick={showInArc}>
+              <Icon name="arc" size={14} /> {t('action.openArc')}
+            </Button>
+          </>
+        ) : (
+          <p className="text-sm text-muted">{t('insights.chord.select')}</p>
         )}
       </Card>
     </div>

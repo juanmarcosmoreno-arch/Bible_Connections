@@ -40,6 +40,7 @@ export default function ExportDialog() {
   const markers = (): AxisMarker[] => {
     if (!selection || !cols) return [];
     if (selection.kind === 'passage') return [{ start: selection.start, end: selection.end }];
+    if (selection.kind === 'path') return selection.verses.map((v) => ({ start: v, end: v }));
     return [
       { start: cols.sourceStart[selection.index], end: cols.sourceEnd[selection.index] },
       { start: cols.targetStart[selection.index], end: cols.targetEnd[selection.index] },

@@ -12,7 +12,8 @@ export type PassageUnit = 'verse' | 'range' | 'chapter' | 'book' | 'testament';
 
 export type Selection =
   | { kind: 'passage'; unit: PassageUnit; start: number; end: number }
-  | { kind: 'reference'; index: number };
+  | { kind: 'reference'; index: number }
+  | { kind: 'path'; verses: number[]; refs: number[] };
 
 export interface Settings {
   anchor: AnchorRule;
@@ -101,6 +102,7 @@ export const actions = {
     appStore.set({ selection: { kind: 'passage', unit, start, end }, panelOpen: true }),
   selectReference: (index: number) => appStore.set({ selection: { kind: 'reference', index }, panelOpen: true }),
   clearSelection: () => appStore.set({ selection: null }),
+  selectPath: (verses: number[], refs: number[]) => appStore.set({ selection: { kind: 'path', verses, refs }, panelOpen: true }),
   setSelectionDirection: (selectionDirection: BookDirection) => appStore.set({ selectionDirection }),
   setPanelOpen: (panelOpen: boolean) => appStore.set({ panelOpen }),
   setFiltersOpen: (filtersOpen: boolean) => appStore.set({ filtersOpen }),

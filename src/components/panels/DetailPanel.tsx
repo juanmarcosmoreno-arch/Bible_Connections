@@ -15,6 +15,7 @@ import {
   bookName,
   formatChapter,
   formatRange,
+  formatVerse,
 } from '../../data/bibleStructure.ts';
 import { loadNetwork } from '../../data/loader.ts';
 import type { NetworkFile } from '../../graph/networkTypes.ts';
@@ -25,7 +26,7 @@ import { focusBook, focusChapter, focusPassage, focusTestament, goToVerse } from
 import { arcColor, categorical } from '../../utils/colors.ts';
 import { Icon, IconButton, Segmented, Toggle } from '../ui/index.tsx';
 import { ConnectionList, type ConnectionItem } from './ConnectionList.tsx';
-import { useSourceLabel } from '../SourceTag.tsx';
+import { SourceTag, useSourceLabel } from '../SourceTag.tsx';
 import { PassageText } from './PassageText.tsx';
 
 type Tab = 'passage' | 'connections' | 'network' | 'context';
@@ -61,11 +62,19 @@ export function DetailPanel() {
       {selection ? (
         <>
           <SelectionHeader selection={selection} />
-          <div className="px-4 pb-2">
-            <Segmented value={tab} onChange={setTab} options={tabs} label={t('panel.selection')} size="xs" />
-          </div>
+          {selection.kind !== 'path' && (
+            <div className="px-4 pb-2">
+              <Segmented value={tab} onChange={setTab} options={tabs} label={t('panel.selection')} size="xs" />
+            </div>
+          )}
           <div className="scroll-thin min-h-0 flex-1 overflow-y-auto px-4 pb-6" data-testid="panel-body">
-            {selection.kind === 'reference' ? <ReferenceBody index={selection.index} tab={tab} /> : <PassageBody sel={selection} tab={tab} />}
+            {selection.kind === 'reference' ? (
+              <ReferenceBody index={selection.index} tab={tab} />
+            ) : selection.kind === 'path' ? (
+              <PathSteps verses={selection.verses} refs={selection.refs} />
+            ) : (
+              <PassageBody sel={selection} tab={tab} />
+            )}
           </div>
         </>
       ) : (
@@ -98,6 +107,13 @@ function SelectionHeader({ selection }: { selection: Selection }) {
       );
     }
     unit = t('panel.connections');
+  } else if (selection.kind === 'path') {
+    title = (
+      <>
+        {formatVerse(selection.verses[0], lang)} <span className="text-muted">→</span> {formatVerse(selection.verses[selection.verses.length - 1], lang)}
+      </>
+    );
+    unit = t('path.title');
   } else {
     const { start, end } = selection;
     if (selection.unit === 'verse' || selection.unit === 'range') {
@@ -561,5 +577,39 @@ function ReferenceBody({ index: i, tab }: { index: number; tab: Tab }) {
       </dl>
       <PositionBar start={s0} end={s1} second={[t0, t1]} />
     </div>
+  );
+}
+
+/** A chain of references between two passages, step by step, with texts. */
+export function PathSteps({ verses, refs }: { verses: number[]; refs: number[] }) {
+  const t = useT();
+  const lang = useApp((s) => s.lang);
+  const { cols } = useData();
+  if (!cols) return null;
+  return (
+    <ol className="space-y-1" data-testid="path-steps">
+      {verses.map((v, k) => (
+        <li key={`${v}-${k}`}>
+          <div className="rounded-lg border border-line bg-bg/40 px-3 py-2">
+            <button type="button" className="text-sm font-semibold hover:text-accent" onClick={() => goToVerse(v)}>
+              {formatVerse(v, lang)}
+            </button>
+            <div className="mt-1">
+              <PassageText start={v} end={v} compact />
+            </div>
+          </div>
+          {k < refs.length && (
+            <div className="flex items-center gap-2 py-1 pl-4 text-[11px] text-muted">
+              <span>↓</span>
+              <button type="button" className="hover:text-fg" onClick={() => actions.selectReference(refs[k])}>
+                {formatRange(cols.sourceStart[refs[k]], cols.sourceEnd[refs[k]], lang, true)} → {formatRange(cols.targetStart[refs[k]], cols.targetEnd[refs[k]], lang, true)}
+              </button>
+              <SourceTag origin={cols.origin[refs[k]]} />
+            </div>
+          )}
+        </li>
+      ))}
+      <li className="pt-1 text-[11px] text-muted">{t('path.steps', { n: refs.length })}</li>
+    </ol>
   );
 }

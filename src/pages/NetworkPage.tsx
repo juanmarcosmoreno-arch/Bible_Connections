@@ -14,6 +14,8 @@ import { useNetwork } from '../hooks/useNetwork.ts';
 import { formatNumber, useT } from '../i18n/index.ts';
 import { useApp } from '../state/appState.ts';
 import { focusBook, focusChapter, goToVerse } from '../state/navigation.ts';
+import { PathFinder } from '../visualizations/NetworkExplorer/PathFinder.tsx';
+import { NamesExplorer } from '../visualizations/NetworkExplorer/NamesExplorer.tsx';
 import { categorical } from '../utils/colors.ts';
 import { downloadDataUrl } from '../utils/download.ts';
 import { graphCanvasDataUrl, NetworkGraph, type GraphLink, type GraphNode } from '../visualizations/NetworkExplorer/NetworkGraph.tsx';
@@ -33,7 +35,34 @@ function nodeBookId(level: 'book' | 'chapter', id: number) {
   return level === 'book' ? id : CHAPTERS[id].bookId;
 }
 
+type Mode = 'graph' | 'path' | 'names';
+
 export default function NetworkPage() {
+  const t = useT();
+  const [mode, setMode] = useState<Mode>('graph');
+  return (
+    <div className="flex h-full min-h-0 flex-col" data-testid="network-page">
+      <div className="flex shrink-0 items-center justify-center border-b border-line px-3 py-2">
+        <div className="w-full max-w-md">
+          <Segmented
+            value={mode}
+            onChange={setMode}
+            label={t('network.title')}
+            size="xs"
+            options={[
+              { value: 'graph', label: t('network.mode.graph') },
+              { value: 'path', label: t('network.mode.path') },
+              { value: 'names', label: t('network.mode.names') },
+            ]}
+          />
+        </div>
+      </div>
+      <div className="min-h-0 flex-1">{mode === 'graph' ? <GraphMode /> : mode === 'path' ? <PathFinder /> : <NamesExplorer />}</div>
+    </div>
+  );
+}
+
+function GraphMode() {
   const t = useT();
   const lang = useApp((s) => s.lang);
   const theme = useApp((s) => s.theme);
@@ -53,7 +82,7 @@ export default function NetworkPage() {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col lg:flex-row" data-testid="network-page">
+    <div className="flex h-full min-h-0 flex-col lg:flex-row" data-testid="network-graph-mode">
       <div className="relative min-h-[55vh] flex-1 overflow-hidden lg:min-h-0" ref={graphRef}>
         {level === 'verse' ? (
           <EgoNetwork theme={theme} useFilters={useFilters} />

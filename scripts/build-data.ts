@@ -8,12 +8,13 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { BOOKS, CHAPTERS, TOTAL_VERSES } from '../src/data/bibleStructure.ts';
 import { FORMAT_VERSION, decodeReferences, type DataManifest } from '../src/data/format.ts';
 import { buildAllTranslations } from './build-texts.ts';
+import { buildNames } from './build-names.ts';
 import { generateStatistics } from './generate-statistics.ts';
 import { importCrossReferences, writeImport } from './import-crossrefs.ts';
 import { OUT_DIR, isMain, sha256, toArrayBuffer, writeJson } from './lib/io.ts';
 
 /** Bump when the output format or build logic changes, to force a rebuild. */
-export const BUILD_VERSION = 4;
+export const BUILD_VERSION = 5;
 
 /** Hash of every input that affects the generated data. */
 export function inputsHash(): string {
@@ -23,6 +24,7 @@ export function inputsHash(): string {
     'src/data/books.ts',
     'src/data/tsk.ts',
     'data-source/tsk/TSK.zip',
+    'data-source/names/tipnr-derived.json',
     ...readdirSync('data-source/texts').flatMap((d) =>
       readdirSync(`data-source/texts/${d}`).map((f) => `data-source/texts/${d}/${f}`),
     ),
@@ -40,6 +42,9 @@ export function buildData(): DataManifest {
 
   const texts = buildAllTranslations();
   for (const r of texts) console.log(`• text ${r.code}: ${r.withText}/${r.verses} verses with text, ${r.remapped} remapped, ${r.shared} shared`);
+
+  const names = buildNames();
+  console.log(`• people & places: ${names.entries.length} (STEPBible TIPNR)`);
 
   const cols = decodeReferences(toArrayBuffer(imp.buffer), imp.records.length);
   const { stats, books, chapters } = generateStatistics(cols);

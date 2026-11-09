@@ -19,7 +19,7 @@ export interface UrlState {
 }
 
 export function encodeSelection(sel: Selection | null, cols?: ReferenceColumns): string | null {
-  if (!sel) return null;
+  if (!sel || sel.kind === 'path') return null;
   if (sel.kind === 'reference') {
     if (!cols) return null;
     const i = sel.index;

@@ -519,7 +519,6 @@ function ArcTooltip({ tip, width }: { tip: Tip; width: number }) {
   let body: React.ReactNode;
   if (tip.kind === 'arc') {
     const i = tip.index;
-    const votes = cols.votes[i];
     const cls = ['near', 'mid', 'far'][derived.distClass[i]] as 'near' | 'mid' | 'far';
     body = (
       <>
@@ -530,7 +529,7 @@ function ArcTooltip({ tip, width }: { tip: Tip; width: number }) {
           <span>{formatRange(cols.targetStart[i], cols.targetEnd[i], lang)}</span>
         </div>
         <div className="mt-1 text-xs text-muted">
-          {formatNumber(votes, lang)} {Math.abs(votes) === 1 ? t('unit.vote') : t('unit.votes')} · {t(`filters.distance.${cls}`)}
+          {t('panel.distance')}: {t(`filters.distance.${cls}`)}
         </div>
         <div className="mt-1 text-[11px] text-muted/80">{t('arc.tooltip.click')}</div>
       </>

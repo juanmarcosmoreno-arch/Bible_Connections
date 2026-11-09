@@ -16,7 +16,7 @@ function csvField(v: string | number): string {
 }
 
 export function connectionsToCSV(cols: ReferenceColumns, derived: DerivedReferences, indices: ArrayLike<number>): string {
-  const header = ['rank', 'source', 'target', 'votes', 'source_book', 'target_book', 'source_testament', 'target_testament', 'distance_verses', 'distance_class'];
+  const header = ['rank', 'source', 'target', 'source_book', 'target_book', 'source_testament', 'target_testament', 'distance_verses', 'distance_class'];
   const lines = [header.join(',')];
   for (let k = 0; k < indices.length; k++) {
     const i = indices[k];
@@ -26,7 +26,6 @@ export function connectionsToCSV(cols: ReferenceColumns, derived: DerivedReferen
         k + 1,
         osisRange(s, cols.sourceEnd[i]),
         osisRange(t, cols.targetEnd[i]),
-        cols.votes[i],
         BOOKS[VERSE_BOOK[s]].code,
         BOOKS[VERSE_BOOK[t]].code,
         s >= NT_START ? 'NT' : 'OT',
@@ -47,7 +46,7 @@ export interface JsonExport {
   filters: FilterState;
   anchor: string;
   count: number;
-  connections: { source: string; target: string; votes: number; distanceVerses: number; distanceClass: string }[];
+  connections: { source: string; target: string; distanceVerses: number; distanceClass: string }[];
 }
 
 export function connectionsToJSON(cols: ReferenceColumns, derived: DerivedReferences, indices: ArrayLike<number>, filters: FilterState, now = new Date()): JsonExport {
@@ -57,7 +56,6 @@ export function connectionsToJSON(cols: ReferenceColumns, derived: DerivedRefere
     connections.push({
       source: osisRange(cols.sourceStart[i], cols.sourceEnd[i]),
       target: osisRange(cols.targetStart[i], cols.targetEnd[i]),
-      votes: cols.votes[i],
       distanceVerses: Math.round(derived.distance[i] * TOTAL_VERSES),
       distanceClass: CLASS[derived.distClass[i]],
     });
@@ -71,7 +69,6 @@ export interface FilteredStatistics {
   count: number;
   testaments: Record<'OT-OT' | 'OT-NT' | 'NT-OT' | 'NT-NT', number>;
   distanceClasses: Record<'near' | 'mid' | 'far', number>;
-  votes: { min: number; max: number; mean: number; median: number };
   bySourceBook: Record<string, number>;
   byTargetBook: Record<string, number>;
 }
@@ -81,7 +78,6 @@ export function filteredStatistics(cols: ReferenceColumns, derived: DerivedRefer
   const distanceClasses = { near: 0, mid: 0, far: 0 };
   const bySourceBook: Record<string, number> = {};
   const byTargetBook: Record<string, number> = {};
-  const votes: number[] = [];
   for (let k = 0; k < indices.length; k++) {
     const i = indices[k];
     const s = cols.sourceStart[i], t = cols.targetStart[i];
@@ -90,17 +86,14 @@ export function filteredStatistics(cols: ReferenceColumns, derived: DerivedRefer
     const sb = BOOKS[VERSE_BOOK[s]].code, tb = BOOKS[VERSE_BOOK[t]].code;
     bySourceBook[sb] = (bySourceBook[sb] ?? 0) + 1;
     byTargetBook[tb] = (byTargetBook[tb] ?? 0) + 1;
-    votes.push(cols.votes[i]);
   }
-  votes.sort((a, b) => a - b);
-  const n = votes.length;
+  const n = indices.length;
   return {
     attribution: ATTRIBUTION,
     filters,
     count: n,
     testaments,
     distanceClasses,
-    votes: { min: n ? votes[0] : 0, max: n ? votes[n - 1] : 0, mean: n ? votes.reduce((a, b) => a + b, 0) / n : 0, median: n ? votes[Math.floor((n - 1) / 2)] : 0 },
     bySourceBook,
     byTargetBook,
   };

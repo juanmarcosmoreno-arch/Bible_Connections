@@ -15,7 +15,7 @@ const idx = applyFilters(cols, d, filters);
 describe('exports', () => {
   it('CSV lists the filtered connections with original identifiers', () => {
     const csv = connectionsToCSV(cols, d, idx).trim().split('\n');
-    expect(csv[0]).toBe('rank,source,target,votes,source_book,target_book,source_testament,target_testament,distance_verses,distance_class');
+    expect(csv[0]).toBe('rank,source,target,source_book,target_book,source_testament,target_testament,distance_verses,distance_class');
     expect(csv).toHaveLength(idx.length + 1);
     for (const line of csv.slice(1)) expect(line.split(',')[1]).toMatch(/^Jonah\.\d+\.\d+$/);
   });
@@ -24,7 +24,7 @@ describe('exports', () => {
     expect(json.count).toBe(idx.length);
     expect(json.filters).toEqual(filters);
     expect(json.attribution).toBe(ATTRIBUTION);
-    expect(json.connections[0].votes).toBeGreaterThanOrEqual(json.connections[json.connections.length - 1].votes);
+    expect(json.connections[0]).not.toHaveProperty('votes');
   });
   it('aggregated statistics add up', () => {
     const s = filteredStatistics(cols, d, idx, filters);

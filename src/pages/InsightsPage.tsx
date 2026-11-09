@@ -7,12 +7,11 @@ import type { Statistics } from '../analysis/statistics.ts';
 import { ConnectionList, type ConnectionItem } from '../components/panels/ConnectionList.tsx';
 import { Button, Icon, Segmented, Spinner } from '../components/ui/index.tsx';
 import { BOOKS, VERSE_BOOK, bookName, formatChapter, formatRange } from '../data/bibleStructure.ts';
-import { parseSpan } from '../data/parser.ts';
 import { loadStatistics } from '../data/loader.ts';
 import { useData } from '../hooks/useData.tsx';
 import { formatNumber, useT } from '../i18n/index.ts';
 import { actions, useApp } from '../state/appState.ts';
-import { focusBook, focusChapter, focusPassage, focusReference } from '../state/navigation.ts';
+import { focusBook, focusChapter, focusPassage } from '../state/navigation.ts';
 import { BarChart, RankBars } from '../visualizations/charts/BarChart.tsx';
 import { Heatmap, matrixValues, type MatrixScale } from '../visualizations/ConnectionMatrix/Heatmap.tsx';
 import { NT_BOOKS, OT_BOOKS, TestamentFlow, flowCounts, type FlowDirection } from '../visualizations/TestamentComparison/TestamentFlow.tsx';
@@ -96,25 +95,22 @@ function pct(n: number, d: number) {
 function Overview({ stats }: { stats: Statistics }) {
   const t = useT();
   const lang = useApp((s) => s.lang);
-  const { cols } = useData();
   const T = stats.totals;
   const cross = stats.testaments['OT-NT'] + stats.testaments['NT-OT'];
   const books = [...stats.books].sort((a, b) => b.out + b.in - (a.out + a.in)).slice(0, 15);
   const exportStats = () => downloadText(JSON.stringify(stats, null, 2), 'bible-connections-statistics.json', 'application/json');
   return (
     <div className="mt-6 space-y-6">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4" data-testid="kpis">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3" data-testid="kpis">
         <Kpi label={t('insights.kpi.references')} value={formatNumber(T.references, lang)} />
         <Kpi label={t('insights.kpi.books')} value={formatNumber(T.books, lang)} sub={`${formatNumber(T.chapters, lang)} ${t('unit.chapters')}`} />
         <Kpi label={t('insights.kpi.verses')} value={formatNumber(T.versesWithConnections, lang)} sub={`${pct(T.versesWithConnections, T.verses)} ${t('misc.of')} ${formatNumber(T.verses, lang)}`} />
         <Kpi label={t('insights.kpi.avg')} value={T.avgConnectionsPerVerse.toFixed(1)} sub={`${t('panel.outgoing')} + ${t('panel.incoming').toLowerCase()}`} />
         <Kpi label={t('insights.kpi.cross')} value={formatNumber(cross, lang)} sub={pct(cross, T.references)} />
         <Kpi label={t('insights.kpi.ranges')} value={formatNumber(T.rangeReferences, lang)} sub={pct(T.rangeReferences, T.references)} />
-        <Kpi label={t('insights.kpi.negative')} value={formatNumber(T.negativeVotes, lang)} sub={pct(T.negativeVotes, T.references)} />
-        <Kpi label={t('panel.votes')} value={`${stats.votes.median}`} sub={`median · p90 ${stats.votes.p90} · max ${formatNumber(stats.votes.max, lang)}`} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         <Card title={t('insights.rank.books')}>
           <RankBars lang={lang} items={books.map((b) => ({ key: b.id, label: bookName(b.id, lang), value: b.out + b.in, sub: `${b.out} → · ${b.in} ←` }))} onPick={(k) => focusBook(Number(k))} />
         </Card>
@@ -124,30 +120,9 @@ function Overview({ stats }: { stats: Statistics }) {
         <Card title={t('insights.rank.verses')}>
           <RankBars lang={lang} items={stats.topVerses.slice(0, 15).map((v) => ({ key: v.verse, label: formatRange(v.verse, v.verse, lang), value: v.total, sub: `${v.out} → · ${v.in} ←` }))} onPick={(k) => focusPassage('verse', Number(k), Number(k))} />
         </Card>
-        <Card title={t('insights.rank.votes')}>
-          <ol className="space-y-1" data-testid="top-votes">
-            {stats.topReferences.slice(0, 15).map((r, k) => {
-              const s = parseSpan(r.source), tg = parseSpan(r.target);
-              if (!s.ok || !tg.ok) return null;
-              return (
-                <li key={r.index} className="grid grid-cols-[1.5rem_1fr_auto] items-center gap-2 text-sm">
-                  <span className="text-right text-[11px] tabular-nums text-muted">{k + 1}</span>
-                  <button type="button" className="truncate text-left hover:text-accent" onClick={() => cols && focusReference(cols, r.index)}>
-                    {formatRange(s.span.start, s.span.end, lang)} <span className="text-muted">→</span> {formatRange(tg.span.start, tg.span.end, lang)}
-                  </button>
-                  <span className="text-xs tabular-nums text-muted">{formatNumber(r.votes, lang)}</span>
-                </li>
-              );
-            })}
-          </ol>
-        </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card title={t('insights.dist.votes')}>
-          <BarChart title={t('insights.dist.votes')} lang={lang} log bars={stats.votes.histogram.map((h) => ({ label: h.label, value: h.count }))} />
-          <p className="mt-2 text-[11px] text-muted">log scale</p>
-        </Card>
+      <div className="grid gap-6 lg:grid-cols-3">
         <Card title={t('insights.dist.distance')}>
           <BarChart
             title={t('insights.dist.distance')}
@@ -226,14 +201,14 @@ function Matrix({ stats }: { stats: Statistics }) {
   const { cols } = useData();
   const [scale, setScale] = useState<MatrixScale>('absolute');
   const [cell, setCell] = useState<[number, number] | null>(null);
-  const values = useMemo(() => matrixValues(stats.matrix.counts, stats.matrix.votes, scale), [stats, scale]);
+  const values = useMemo(() => matrixValues(stats.matrix.counts, scale), [stats, scale]);
   const items: ConnectionItem[] = useMemo(() => {
     if (!cols || !cell) return [];
     const out: ConnectionItem[] = [];
     for (let i = 0; i < cols.count; i++) if (VERSE_BOOK[cols.sourceStart[i]] === cell[0] && VERSE_BOOK[cols.targetStart[i]] === cell[1]) out.push({ index: i, other: 'target' });
     return out;
   }, [cols, cell]);
-  const help = { absolute: t('insights.matrix.help.absolute'), normalized: t('insights.matrix.help.normalized'), votes: t('insights.matrix.help.votes') }[scale];
+  const help = { absolute: t('insights.matrix.help.absolute'), normalized: t('insights.matrix.help.normalized') }[scale];
   const showInArc = () => {
     if (!cell) return;
     actions.setFilters({ books: [cell[0]], targetBooks: [cell[1]], bookDirection: 'out' });
@@ -247,10 +222,10 @@ function Matrix({ stats }: { stats: Statistics }) {
             {t('insights.matrix.rows')} · {t('insights.matrix.cols')}
           </div>
           <div className="w-full max-w-sm">
-            <Segmented value={scale} onChange={setScale} label={t('insights.matrix.scale')} size="xs" options={(['absolute', 'normalized', 'votes'] as const).map((v) => ({ value: v, label: t(`insights.matrix.${v}`) }))} />
+            <Segmented value={scale} onChange={setScale} label={t('insights.matrix.scale')} size="xs" options={(['absolute', 'normalized'] as const).map((v) => ({ value: v, label: t(`insights.matrix.${v}`) }))} />
           </div>
         </div>
-        <Heatmap counts={stats.matrix.counts} votes={stats.matrix.votes} scale={scale} selected={cell} onSelect={setCell} />
+        <Heatmap counts={stats.matrix.counts} scale={scale} selected={cell} onSelect={setCell} />
         <p className="mt-3 text-[11px] leading-relaxed text-muted">{help} Colour: log scale.</p>
       </Card>
       <Card title={cell ? t('insights.matrix.cell', { a: bookName(cell[0], lang), b: bookName(cell[1], lang) }) : t('insights.matrix')}>

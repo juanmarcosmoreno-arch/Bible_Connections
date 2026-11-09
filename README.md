@@ -64,17 +64,17 @@ afiliada a sus autores.
   representa toda la Biblia. Cada versículo ocupa su posición real (orden canónico protestante),
   así que cada libro y capítulo ocupa un ancho proporcional a su cantidad de versículos.
 - **Color continuo por distancia**: violeta/azul (cercanas) → verde/amarillo (intermedias) →
-  naranja/rojo (lejanas). La intensidad refleja los votos.
+  naranja/rojo (lejanas).
 - Barras bajo el eje: un capítulo por barra, libros alternando gris claro/oscuro y el primer libro
   de cada testamento resaltado, como en el original (largo = versículos, o referencias, a elección).
 - **Zoom** general, por testamento, libro, capítulo y versículo (rueda, pellizco, doble clic,
   botones, teclado `+ − 0 ← →`), con **transiciones animadas** y desplazamiento horizontal.
-- **Hover**: resalta el arco y muestra origen, destino, votos y distancia.
-  **Clic en un arco**: panel con ambos textos, votos, libros, posición relativa y conexiones
+- **Hover**: resalta el arco, atenúa el resto y muestra origen, destino y distancia.
+  **Clic en un arco**: panel con ambos textos, libros, posición relativa y conexiones
   relacionadas (recíproca, otras desde el origen, otras hacia el destino).
   **Clic en el eje**: selecciona el libro, capítulo o versículo según el nivel de zoom.
 - **Selección de pasajes** (también rangos): resalta todas sus conexiones, atenúa el resto, las
-  lista ordenadas por votos y permite saltar al otro extremo (y volver con *atrás*).
+  lista y permite saltar al otro extremo (y volver con *atrás*).
 - Pantalla inicial con animación sutil (los arcos crecen desde el eje; se cancela al interactuar).
 
 ### Navegación y búsqueda
@@ -93,7 +93,7 @@ panel inferior redimensionable.
 
 ### Filtros
 Testamento (todas, AT→AT, NT→NT, AT↔NT) · uno o varios libros, con dirección *desde / hacia /
-ambas* y modo *entre dos grupos de libros* · votos mínimos (incluye o excluye votos negativos) ·
+ambas* y modo *entre dos grupos de libros* ·
 distancia (cercanas / intermedias / lejanas) · densidad **Top 1k / 10k / 50k / 100k / todas**.
 La selección es **determinista**: los datos están ordenados por votos (desc.) y luego por posición
 canónica, así que *Top N* es siempre el mismo prefijo, nunca una muestra aleatoria.
@@ -108,12 +108,12 @@ canónica, así que *Top N* es siempre el mismo prefijo, nunca una muestra aleat
 
 ### INSIGHTS — estadísticas
 - Indicadores: total de referencias, libros, capítulos, versículos con conexiones, promedio de
-  conexiones por versículo, conexiones entre testamentos, rangos, votos negativos.
-- Rankings de libros, capítulos, versículos y conexiones más votadas.
-- Distribuciones de votos y distancias; alcance (mismo capítulo / libro / entre libros) y
+  conexiones por versículo, conexiones entre testamentos, rangos.
+- Rankings de libros, capítulos y versículos más conectados.
+- Distribución de distancias; alcance (mismo capítulo / libro / entre libros) y
   testamentos.
 - **Matriz 66 × 66** (filas: libro de origen, columnas: destino) con escala absoluta, normalizada
-  o ponderada por votos, y detalle de las conexiones de cada celda.
+  y detalle de las conexiones de cada celda.
 - **Comparación de testamentos**: flujo AT ↔ NT (p. ej. Isaías → libros del NT; Mateo → AT).
 
 ### Otros
@@ -275,12 +275,13 @@ Clases: cercana ≤ 3 %, intermedia ≤ 20 %, lejana > 20 % (≈ terciles del co
 66 % ≈ 0,20). La escala de color es continua y lineal por tramos sobre esos cortes, interpolada en
 CIELAB.
 
-**Votos.** Se conservan tal cual (incluidos los negativos). Por defecto se muestran todas las
-referencias; el filtro de votos mínimos permite excluirlas.
+**Votos.** El archivo de OpenBible incluye votos de sus usuarios. Se conservan intactos en los
+datos (por fidelidad), pero la interfaz no los muestra ni los usa como filtro. Internamente sólo
+determinan el orden estable de la tabla (que define *Top N*) y la intensidad relativa de cada arco.
 
 **Normalizaciones de la matriz.** *Absoluta*: cantidad de referencias del libro fila al libro
 columna. *Normalizada*: cantidad ÷ (versículos del libro fila × versículos del libro columna) ×
-10⁶ (referencias por millón de pares posibles). *Ponderada*: suma de los votos positivos.
+10⁶ (referencias por millón de pares posibles).
 
 **Redes.** Las aristas agregan las referencias entre nodos (anclando cada rango en su primer
 versículo); los autoenlaces se cuentan aparte. Intermediación: Brandes con longitud = 1/peso,
@@ -371,8 +372,6 @@ Las licencias del código, los datos y los textos son **independientes**:
 
 ## Limitaciones conocidas
 
-- Los **votos** reflejan a los usuarios de OpenBible.info; no son una medida autorizada de
-  relevancia.
 - Cada rango se dibuja y se agrega en un único punto de anclaje (configurable).
 - En el navegador, la **intermediación por capítulos** filtrada es aproximada (128 pivotes); los
   valores precalculados sin filtros son exactos.

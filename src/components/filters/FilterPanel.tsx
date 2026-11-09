@@ -9,8 +9,6 @@ import { arcColor } from '../../utils/colors.ts';
 import { Button, Field, Icon, IconButton, Segmented } from '../ui/index.tsx';
 import { BookPicker } from './BookPicker.tsx';
 
-const VOTE_STEPS = [-1000, 0, 1, 2, 5, 10, 20, 50, 100, 200, 500];
-
 export function FilterPanel({ onClose }: { onClose?: () => void }) {
   const t = useT();
   const lang = useApp((s) => s.lang);
@@ -18,7 +16,6 @@ export function FilterPanel({ onClose }: { onClose?: () => void }) {
   const { cols, filtered } = useData();
   const [pair, setPair] = useState(f.targetBooks.length > 0);
   const set = (patch: Partial<FilterState>) => actions.setFilters(patch);
-  const voteIdx = Math.max(0, VOTE_STEPS.findIndex((v) => v >= f.minVotes));
 
   return (
     <div className="flex h-full flex-col" data-testid="filter-panel">
@@ -83,27 +80,6 @@ export function FilterPanel({ onClose }: { onClose?: () => void }) {
                 {f.targetBooks.length > 0 && ` ${f.bookDirection === 'both' ? '↔' : '→'} ${f.targetBooks.map((b) => BOOKS[b].short[lang]).join(', ')}`}
               </p>
             )}
-          </div>
-        </Field>
-
-        <Field label={`${t('filters.minVotes')}: ${f.minVotes <= -1000 ? t('filters.minVotesAll') : `≥ ${f.minVotes}`}`}>
-          <input
-            type="range"
-            min={0}
-            max={VOTE_STEPS.length - 1}
-            step={1}
-            value={voteIdx}
-            onChange={(e) => set({ minVotes: VOTE_STEPS[Number(e.target.value)] })}
-            className="w-full"
-            aria-label={t('filters.minVotes')}
-            data-testid="min-votes"
-          />
-          <div className="flex justify-between text-[10px] text-muted">
-            <span>{t('filters.density.all')}</span>
-            <span>0</span>
-            <span>10</span>
-            <span>100</span>
-            <span>500</span>
           </div>
         </Field>
 

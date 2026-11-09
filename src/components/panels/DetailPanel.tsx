@@ -226,9 +226,8 @@ function PassageBody({ sel, tab }: { sel: Extract<Selection, { kind: 'passage' }
           </a>
         )}
         <SectionTitle>{t('panel.connections')}</SectionTitle>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Stat label={t('panel.total')} value={formatNumber(all.length, lang)} />
-          <Stat label={t('panel.maxVotes')} value={formatNumber(all.length && cols ? cols.votes[all[0]] : 0, lang)} />
           <Stat label={t('panel.hidden')} value={formatNumber(hidden, lang)} />
         </div>
         <div className="mt-3">
@@ -478,7 +477,7 @@ function ReferenceBody({ index: i, tab }: { index: number; tab: Tab }) {
           </button>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <Stat label={t('panel.votes')} value={formatNumber(cols.votes[i], lang)} />
+          <Stat label={t('panel.relation')} value={rel} />
           <Stat
             label={t('panel.distance')}
             value={

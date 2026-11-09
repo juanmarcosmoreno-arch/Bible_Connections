@@ -37,7 +37,7 @@ test.describe('Arc view', () => {
     await expect(page.getByTestId('selection-title')).toHaveText('Juan 3:16');
     await expect(page.getByTestId('panel-body')).toContainText('Porque de tal manera amó Dios al mundo');
     await expect(page).toHaveURL(/sel=v:John\.3\.16/);
-    // Connections list, sorted by votes, lets us jump to the other end.
+    // Connections list lets us jump to the other end.
     await page.getByRole('radio', { name: 'Conexiones' }).click();
     const first = page.getByTestId('connection-list').locator('li').first();
     await expect(first).toContainText('Romanos 5:8');
@@ -108,7 +108,7 @@ test.describe('Arc view', () => {
     await page.getByTestId('open-export').click();
     const [dl] = await Promise.all([page.waitForEvent('download'), page.getByTestId('export-csv').click()]);
     const lines = readFileSync((await dl.path())!, 'utf8').trim().split('\n');
-    expect(lines[0]).toMatch(/^rank,source,target,votes/);
+    expect(lines[0]).toMatch(/^rank,source,target,source_book/);
     expect(lines.length - 1).toBeGreaterThan(100);
     expect(lines.slice(1).every((l) => l.split(',')[1].startsWith('Jonah.'))).toBe(true);
   });

@@ -1,6 +1,6 @@
 /**
  * 66 × 66 connection matrix (rows: source book, columns: target book), drawn on canvas.
- * Scales: absolute count, normalised by book sizes, or weighted by votes.
+ * Scales: absolute count, or normalised by book sizes.
  */
 import { interpolateInferno, interpolateMagma } from 'd3';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -8,16 +8,15 @@ import { BOOKS, NT_START } from '../../data/bibleStructure.ts';
 import { formatNumber, useT } from '../../i18n/index.ts';
 import { useApp } from '../../state/appState.ts';
 
-export type MatrixScale = 'absolute' | 'normalized' | 'votes';
+export type MatrixScale = 'absolute' | 'normalized';
 
-export function matrixValues(counts: number[], votes: number[], scale: MatrixScale): number[] {
+export function matrixValues(counts: number[], scale: MatrixScale): number[] {
   if (scale === 'absolute') return counts;
-  if (scale === 'votes') return votes;
   // References per 1,000,000 possible verse pairs.
   return counts.map((c, k) => (c / (BOOKS[Math.floor(k / 66)].verseCount * BOOKS[k % 66].verseCount)) * 1e6);
 }
 
-export function Heatmap({ counts, votes, scale, selected, onSelect }: { counts: number[]; votes: number[]; scale: MatrixScale; selected: [number, number] | null; onSelect: (cell: [number, number]) => void }) {
+export function Heatmap({ counts, scale, selected, onSelect }: { counts: number[]; scale: MatrixScale; selected: [number, number] | null; onSelect: (cell: [number, number]) => void }) {
   const t = useT();
   const lang = useApp((s) => s.lang);
   const theme = useApp((s) => s.theme);
@@ -25,7 +24,7 @@ export function Heatmap({ counts, votes, scale, selected, onSelect }: { counts: 
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState(520);
   const [hover, setHover] = useState<{ r: number; c: number; x: number; y: number } | null>(null);
-  const values = useMemo(() => matrixValues(counts, votes, scale), [counts, votes, scale]);
+  const values = useMemo(() => matrixValues(counts, scale), [counts, scale]);
   const max = useMemo(() => Math.max(...values), [values]);
   const LABEL = 44;
 

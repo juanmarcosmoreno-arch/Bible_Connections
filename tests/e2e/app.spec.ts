@@ -56,6 +56,7 @@ test.describe('Arc view', () => {
     await page.mouse.click(x, y);
     await expect(page.getByTestId('selection-title')).toContainText('→');
     await expect(page.getByTestId('panel-body')).toContainText(/Source|Origen/);
+    await expect(page.getByTestId('reference-source')).toContainText(/Treasury of Scripture Knowledge|OpenBible/);
     await expect(page).toHaveURL(/sel=x:/);
   });
 
@@ -78,6 +79,12 @@ test.describe('Arc view', () => {
     await expect.poll(async () => (await perf(page)).arcs).toBe(1000);
     await page.getByTestId('filters-reset').click();
     await expect(page.getByTestId('filter-count')).toContainText('344,799 of 344,799');
+    await page.getByRole('radio', { name: 'Added', exact: true }).click();
+    await expect(page.getByTestId('filter-count')).toContainText('9,775 of 344,799');
+    await expect(page).toHaveURL(/src=openbible/);
+    await page.getByRole('radio', { name: 'Original (TSK)' }).click();
+    await expect(page.getByTestId('filter-count')).toContainText('335,024 of 344,799');
+    await page.getByTestId('filters-reset').click();
     await page.getByTestId('distance-far').click();
     const far = Number((await page.getByTestId('filter-count').textContent())!.split(' of ')[0].replace(/,/g, ''));
     expect(far).toBeLessThan(344799);
@@ -108,7 +115,7 @@ test.describe('Arc view', () => {
     await page.getByTestId('open-export').click();
     const [dl] = await Promise.all([page.waitForEvent('download'), page.getByTestId('export-csv').click()]);
     const lines = readFileSync((await dl.path())!, 'utf8').trim().split('\n');
-    expect(lines[0]).toMatch(/^rank,source,target,source_book/);
+    expect(lines[0]).toMatch(/^rank,source,target,origin,source_book/);
     expect(lines.length - 1).toBeGreaterThan(100);
     expect(lines.slice(1).every((l) => l.split(',')[1].startsWith('Jonah.'))).toBe(true);
   });

@@ -6,6 +6,7 @@
  * never a random sample.
  */
 import type { DerivedReferences, ReferenceColumns } from '../data/references.ts';
+import { ORIGIN, type SourceFilter } from '../data/sources.ts';
 
 export type TestamentFilter = 'all' | 'OT-OT' | 'NT-NT' | 'cross';
 export type BookDirection = 'out' | 'in' | 'both';
@@ -21,8 +22,10 @@ export interface FilterState {
   /** Minimum number of votes (inclusive). */
   minVotes: number;
   distance: { near: boolean; mid: boolean; far: boolean };
-  /** Keep only the N most-voted matching connections (null = all). */
+  /** Keep only the N first matching connections in the stable order (null = all). */
   top: number | null;
+  /** Provenance: every record, only those in the Treasury of Scripture Knowledge, or only those added by OpenBible.info. */
+  source: SourceFilter;
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -33,6 +36,7 @@ export const DEFAULT_FILTERS: FilterState = {
   minVotes: -1000,
   distance: { near: true, mid: true, far: true },
   top: null,
+  source: 'all',
 };
 
 export const DENSITY_OPTIONS: (number | null)[] = [1000, 10000, 50000, 100000, null];
@@ -57,6 +61,7 @@ export function applyFilters(cols: ReferenceColumns, d: DerivedReferences, f: Fi
   const votes = cols.votes;
   for (let i = 0; i < n && k < limit; i++) {
     if (votes[i] < f.minVotes) continue;
+    if (f.source !== 'all' && (cols.origin[i] === ORIGIN.OPENBIBLE) !== (f.source === 'openbible')) continue;
     if (!distOk[d.distClass[i]]) continue;
     const t = d.testaments[i];
     if (f.testament === 'OT-OT' && t !== 0) continue;

@@ -91,8 +91,15 @@ afiliada a sus autores.
 Secciones **Pasaje**, **Conexiones**, **Red** y **Contexto**. Se puede ocultar; en móviles es un
 panel inferior redimensionable.
 
+### Fuentes
+Cada conexión declara su procedencia (en el tooltip, el panel y las listas, con la etiqueta TSK u
+OB). OpenBible.info no la indica en su archivo, así que se compara cada registro con el propio
+*Treasury of Scripture Knowledge* (c. 1880, dominio público): **335.024 (97,2 %) son originales del
+TSK** y **9.775 fueron agregadas por OpenBible.info**. El filtro *Fuente* permite ver sólo las
+originales o sólo las agregadas. Detalle del método en `data-source/README.md`.
+
 ### Filtros
-Testamento (todas, AT→AT, NT→NT, AT↔NT) · uno o varios libros, con dirección *desde / hacia /
+Fuente (todas, originales del TSK, agregadas por OpenBible) · Testamento (todas, AT→AT, NT→NT, AT↔NT) · uno o varios libros, con dirección *desde / hacia /
 ambas* y modo *entre dos grupos de libros* ·
 distancia (cercanas / intermedias / lejanas) · densidad **Top 1k / 10k / 50k / 100k / todas**.
 La selección es **determinista**: los datos están ordenados por votos (desc.) y luego por posición
@@ -294,19 +301,20 @@ libros forman 3 comunidades: Nuevo Testamento; Sabiduría, Profetas y Apocalipsi
 
 ## Pruebas
 
-- **Unitarias (Vitest, 71 pruebas, ~5 s)** sobre la base completa: parseo de referencias y rangos,
+- **Unitarias (Vitest, 77 pruebas, ~5 s)** sobre la base completa: parseo de referencias y rangos,
   validación de libros, posiciones globales, formato binario, importación sin pérdidas (cada línea
   del archivo original presente exactamente una vez), integridad referencial, filtros por
   testamento y libro, votos negativos, clases de distancia, Top N determinista, grados por
   versículo con rangos, búsqueda bilingüe, PageRank / Brandes / Louvain / agrupamiento,
-  estadísticas, textos y alineación, estado en la URL, geometría y exportaciones.
+  estadísticas, textos y alineación, procedencia (parser del TSK y casos verificados a mano),
+  estado en la URL, geometría y exportaciones.
 - **End-to-end (Playwright, 21 pruebas, ~1,5 min)** contra el build de producción servido bajo
   `/Bible_Connections/`: carga y dibujo de los 344.799 arcos (análisis de píxeles), pantalla
   inicial, búsqueda "Juan 3:16", hover y clic en arcos, selección en el eje, filtros, zoom, estado
   en la URL y *atrás*, exportación CSV y PNG, Explorar, Red (incluido el recálculo en el worker),
   Análisis, idioma y tema, rendimiento con la base completa, y en móvil: ausencia de
   desbordamiento horizontal y panel inferior.
-- `npm run data:validate`: 9 comprobaciones independientes de los datos generados.
+- `npm run data:validate`: 10 comprobaciones independientes de los datos generados.
 
 ## Rendimiento
 
@@ -353,6 +361,8 @@ todos los recursos y datos se resuelven con `import.meta.env.BASE_URL`.
 Las licencias del código, los datos y los textos son **independientes**:
 
 - **Código**: MIT (`LICENSE`).
+- **Treasury of Scripture Knowledge**: dominio público (módulo SWORD "TSK" de CrossWire), usado
+  para declarar la procedencia de cada referencia.
 - **Referencias cruzadas**: © OpenBible.info, **[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)**.
   *"Cross-reference data from OpenBible.info (https://www.openbible.info/labs/cross-references/),
   licensed CC BY 4.0."* Los datos derivan principalmente del *Treasury of Scripture Knowledge*

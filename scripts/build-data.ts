@@ -13,7 +13,7 @@ import { importCrossReferences, writeImport } from './import-crossrefs.ts';
 import { OUT_DIR, isMain, sha256, toArrayBuffer, writeJson } from './lib/io.ts';
 
 /** Bump when the output format or build logic changes, to force a rebuild. */
-export const BUILD_VERSION = 3;
+export const BUILD_VERSION = 4;
 
 /** Hash of every input that affects the generated data. */
 export function inputsHash(): string {
@@ -21,6 +21,8 @@ export function inputsHash(): string {
     'data-source/cross_references.txt',
     'src/data/versification.json',
     'src/data/books.ts',
+    'src/data/tsk.ts',
+    'data-source/tsk/TSK.zip',
     ...readdirSync('data-source/texts').flatMap((d) =>
       readdirSync(`data-source/texts/${d}`).map((f) => `data-source/texts/${d}/${f}`),
     ),
@@ -33,6 +35,8 @@ export function buildData(): DataManifest {
   const imp = importCrossReferences();
   writeImport(imp);
   console.log(`• references: ${imp.report.imported}/${imp.report.dataLines} imported, ${imp.report.invalid.count} invalid, ${imp.report.duplicates.count} duplicates (${(imp.gzBytes / 1024).toFixed(0)} KiB gzip)`);
+  const pv = imp.report.provenance;
+  console.log(`• provenance: TSK ${pv.tsk}, TSK reverse ${pv.tskReverse}, OpenBible only ${pv.openbible}`);
 
   const texts = buildAllTranslations();
   for (const r of texts) console.log(`• text ${r.code}: ${r.withText}/${r.verses} verses with text, ${r.remapped} remapped, ${r.shared} shared`);

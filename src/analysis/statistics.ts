@@ -37,6 +37,8 @@ export interface Statistics {
     negativeVotes: number;
     zeroVotes: number;
   };
+  /** Provenance (see src/data/sources.ts). */
+  origin: { tsk: number; tskReverse: number; openbible: number };
   testaments: { 'OT-OT': number; 'NT-NT': number; 'OT-NT': number; 'NT-OT': number };
   scope: { sameChapter: number; sameBook: number; otherBook: number };
   votes: { mean: number; median: number; p90: number; p99: number; min: number; max: number; histogram: HistogramBin[] };
@@ -103,12 +105,17 @@ export function computeStatistics(cols: ReferenceColumns, top = 50): Statistics 
   const dist = new Float64Array(n);
   const classes = { near: 0, mid: 0, far: 0 };
   let ranges = 0, neg = 0, zero = 0, sumVotes = 0;
+  const origin = { tsk: 0, tskReverse: 0, openbible: 0 };
 
   for (let i = 0; i < n; i++) {
     const s = cols.sourceStart[i];
     const t = cols.targetStart[i];
     const v = cols.votes[i];
     sumVotes += v;
+    const o = cols.origin[i];
+    if (o === 1) origin.tsk++;
+    else if (o === 2) origin.tskReverse++;
+    else origin.openbible++;
     if (v < 0) neg++;
     else if (v === 0) zero++;
     if (cols.targetEnd[i] !== t || cols.sourceEnd[i] !== s) ranges++;
@@ -175,6 +182,7 @@ export function computeStatistics(cols: ReferenceColumns, top = 50): Statistics 
       negativeVotes: neg,
       zeroVotes: zero,
     },
+    origin,
     testaments,
     scope,
     votes: {

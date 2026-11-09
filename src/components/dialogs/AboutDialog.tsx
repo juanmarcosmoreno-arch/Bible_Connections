@@ -43,6 +43,13 @@ export function AboutDialog() {
             {formatNumber(manifest.references.count, lang)} {t('unit.references')} · {manifest.source.header.split('#')[1] ?? ''} · SHA-256 {manifest.source.sha256.slice(0, 12)}…
           </p>
         )}
+        <H>{t('about.sources')}</H>
+        <p>
+          {t('about.sourcesBody')}{' '}
+          <a className="text-accent hover:underline" href="https://www.crosswire.org/sword/modules/ModInfo.jsp?modName=TSK" target="_blank" rel="noreferrer">
+            CrossWire TSK
+          </a>
+        </p>
         <H>{t('about.texts')}</H>
         <ul className="space-y-2">
           {translations.map((tr) => (

@@ -14,6 +14,7 @@ import { useHighlight } from '../../hooks/useHighlight.ts';
 import { formatNumber, useT } from '../../i18n/index.ts';
 import { actions, useApp } from '../../state/appState.ts';
 import { arcColor } from '../../utils/colors.ts';
+import { useSourceLabel } from '../../components/SourceTag.tsx';
 import { drawAxis, readAxisColors, type AxisColors, type AxisMarker } from './axis.ts';
 import { CanvasArcRenderer } from './canvasRenderer.ts';
 import { arcController } from './controller.ts';
@@ -511,6 +512,7 @@ export function ArcView({ onRenderer }: { onRenderer?: (kind: 'webgl' | 'canvas'
 
 function ArcTooltip({ tip, width }: { tip: Tip; width: number }) {
   const t = useT();
+  const sourceLabel = useSourceLabel();
   const lang = useApp((s) => s.lang);
   const { cols, derived, degrees } = useData();
   if (!cols || !derived) return null;
@@ -530,6 +532,9 @@ function ArcTooltip({ tip, width }: { tip: Tip; width: number }) {
         </div>
         <div className="mt-1 text-xs text-muted">
           {t('panel.distance')}: {t(`filters.distance.${cls}`)}
+        </div>
+        <div className="mt-0.5 text-xs text-muted">
+          {t('source.label')}: {sourceLabel(cols.origin[i])}
         </div>
         <div className="mt-1 text-[11px] text-muted/80">{t('arc.tooltip.click')}</div>
       </>

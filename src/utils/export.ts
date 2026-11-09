@@ -5,8 +5,9 @@
 import type { FilterState } from '../analysis/filters.ts';
 import { BOOKS, NT_START, TOTAL_VERSES, VERSE_BOOK, osisRange } from '../data/bibleStructure.ts';
 import type { DerivedReferences, ReferenceColumns } from '../data/references.ts';
+import { ORIGIN_KEYS } from '../data/sources.ts';
 
-export const ATTRIBUTION = 'Cross-reference data: OpenBible.info (https://www.openbible.info/labs/cross-references/), CC BY 4.0. Generated with Bible Connections.';
+export const ATTRIBUTION = 'Cross-reference data: OpenBible.info (https://www.openbible.info/labs/cross-references/), CC BY 4.0. Provenance compared with the Treasury of Scripture Knowledge (public domain, CrossWire SWORD module). Generated with Bible Connections.';
 
 const CLASS = ['near', 'mid', 'far'] as const;
 
@@ -16,7 +17,7 @@ function csvField(v: string | number): string {
 }
 
 export function connectionsToCSV(cols: ReferenceColumns, derived: DerivedReferences, indices: ArrayLike<number>): string {
-  const header = ['rank', 'source', 'target', 'source_book', 'target_book', 'source_testament', 'target_testament', 'distance_verses', 'distance_class'];
+  const header = ['rank', 'source', 'target', 'origin', 'source_book', 'target_book', 'source_testament', 'target_testament', 'distance_verses', 'distance_class'];
   const lines = [header.join(',')];
   for (let k = 0; k < indices.length; k++) {
     const i = indices[k];
@@ -26,6 +27,7 @@ export function connectionsToCSV(cols: ReferenceColumns, derived: DerivedReferen
         k + 1,
         osisRange(s, cols.sourceEnd[i]),
         osisRange(t, cols.targetEnd[i]),
+        ORIGIN_KEYS[cols.origin[i]],
         BOOKS[VERSE_BOOK[s]].code,
         BOOKS[VERSE_BOOK[t]].code,
         s >= NT_START ? 'NT' : 'OT',
@@ -46,7 +48,7 @@ export interface JsonExport {
   filters: FilterState;
   anchor: string;
   count: number;
-  connections: { source: string; target: string; distanceVerses: number; distanceClass: string }[];
+  connections: { source: string; target: string; origin: string; distanceVerses: number; distanceClass: string }[];
 }
 
 export function connectionsToJSON(cols: ReferenceColumns, derived: DerivedReferences, indices: ArrayLike<number>, filters: FilterState, now = new Date()): JsonExport {
@@ -56,6 +58,7 @@ export function connectionsToJSON(cols: ReferenceColumns, derived: DerivedRefere
     connections.push({
       source: osisRange(cols.sourceStart[i], cols.sourceEnd[i]),
       target: osisRange(cols.targetStart[i], cols.targetEnd[i]),
+      origin: ORIGIN_KEYS[cols.origin[i]],
       distanceVerses: Math.round(derived.distance[i] * TOTAL_VERSES),
       distanceClass: CLASS[derived.distClass[i]],
     });
@@ -69,6 +72,7 @@ export interface FilteredStatistics {
   count: number;
   testaments: Record<'OT-OT' | 'OT-NT' | 'NT-OT' | 'NT-NT', number>;
   distanceClasses: Record<'near' | 'mid' | 'far', number>;
+  origin: Record<'openbible' | 'tsk' | 'tsk-reverse', number>;
   bySourceBook: Record<string, number>;
   byTargetBook: Record<string, number>;
 }
@@ -76,6 +80,7 @@ export interface FilteredStatistics {
 export function filteredStatistics(cols: ReferenceColumns, derived: DerivedReferences, indices: ArrayLike<number>, filters: FilterState): FilteredStatistics {
   const testaments = { 'OT-OT': 0, 'OT-NT': 0, 'NT-OT': 0, 'NT-NT': 0 };
   const distanceClasses = { near: 0, mid: 0, far: 0 };
+  const origin = { openbible: 0, tsk: 0, 'tsk-reverse': 0 };
   const bySourceBook: Record<string, number> = {};
   const byTargetBook: Record<string, number> = {};
   for (let k = 0; k < indices.length; k++) {
@@ -83,6 +88,7 @@ export function filteredStatistics(cols: ReferenceColumns, derived: DerivedRefer
     const s = cols.sourceStart[i], t = cols.targetStart[i];
     testaments[`${s >= NT_START ? 'NT' : 'OT'}-${t >= NT_START ? 'NT' : 'OT'}` as keyof typeof testaments]++;
     distanceClasses[CLASS[derived.distClass[i]]]++;
+    origin[ORIGIN_KEYS[cols.origin[i]]]++;
     const sb = BOOKS[VERSE_BOOK[s]].code, tb = BOOKS[VERSE_BOOK[t]].code;
     bySourceBook[sb] = (bySourceBook[sb] ?? 0) + 1;
     byTargetBook[tb] = (byTargetBook[tb] ?? 0) + 1;
@@ -94,6 +100,7 @@ export function filteredStatistics(cols: ReferenceColumns, derived: DerivedRefer
     count: n,
     testaments,
     distanceClasses,
+    origin,
     bySourceBook,
     byTargetBook,
   };

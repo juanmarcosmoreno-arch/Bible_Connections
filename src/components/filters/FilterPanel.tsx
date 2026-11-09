@@ -104,6 +104,16 @@ export function FilterPanel({ onClose }: { onClose?: () => void }) {
           </span>
         </Field>
 
+        <Field label={t('filters.source')} hint={t('filters.sourceHelp')}>
+          <Segmented
+            value={f.source}
+            onChange={(source) => set({ source })}
+            label={t('filters.source')}
+            size="xs"
+            options={(['all', 'tsk', 'openbible'] as const).map((v) => ({ value: v, label: t(`filters.source.${v}`) }))}
+          />
+        </Field>
+
         <Field label={t('filters.density')} hint={t('filters.reproducible')}>
           <Segmented
             value={String(f.top)}

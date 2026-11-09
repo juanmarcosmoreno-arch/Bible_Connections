@@ -6,6 +6,7 @@ import { useApp } from '../../state/appState.ts';
 import { focusReference, goToVerse } from '../../state/navigation.ts';
 import { arcColor } from '../../utils/colors.ts';
 import { Icon } from '../ui/index.tsx';
+import { SourceTag } from '../SourceTag.tsx';
 import { PassageText } from './PassageText.tsx';
 
 export interface ConnectionItem {
@@ -42,6 +43,7 @@ export function ConnectionList({ items, pageSize = 40, showSelf = false }: { ite
                   {showSelf && <span className="text-muted">{formatRange(other === 'target' ? cols.sourceStart[i] : cols.targetStart[i], other === 'target' ? cols.sourceEnd[i] : cols.targetEnd[i], lang, true)} → </span>}
                   {formatRange(os, oe, lang)}
                 </button>
+                <SourceTag origin={cols.origin[i]} />
                 <button type="button" className="shrink-0 rounded p-0.5 text-muted hover:text-fg" onClick={() => focusReference(cols, i)} aria-label={t('arc.tooltip.click')} title={t('arc.tooltip.click')}>
                   <Icon name="arc" size={14} />
                 </button>

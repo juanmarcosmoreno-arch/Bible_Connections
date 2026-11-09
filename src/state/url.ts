@@ -94,6 +94,7 @@ export function encodeFilters(f: FilterState, p: URLSearchParams) {
   const dist = `${f.distance.near ? 'n' : ''}${f.distance.mid ? 'm' : ''}${f.distance.far ? 'f' : ''}`;
   if (dist !== 'nmf') p.set('d', dist || '-');
   if (f.top != null) p.set('top', String(f.top));
+  if (f.source !== d.source) p.set('src', f.source);
 }
 
 export function decodeFilters(p: URLSearchParams): FilterState {
@@ -110,6 +111,7 @@ export function decodeFilters(p: URLSearchParams): FilterState {
     minVotes: p.has('mv') && Number.isFinite(mv) ? mv : DEFAULT_FILTERS.minVotes,
     distance: d ? { near: d.includes('n'), mid: d.includes('m'), far: d.includes('f') } : { near: true, mid: true, far: true },
     top: p.has('top') && top > 0 ? top : null,
+    source: p.get('src') === 'tsk' || p.get('src') === 'openbible' ? (p.get('src') as 'tsk' | 'openbible') : 'all',
   };
 }
 

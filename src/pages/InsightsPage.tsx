@@ -101,12 +101,14 @@ function Overview({ stats }: { stats: Statistics }) {
   const exportStats = () => downloadText(JSON.stringify(stats, null, 2), 'bible-connections-statistics.json', 'application/json');
   return (
     <div className="mt-6 space-y-6">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3" data-testid="kpis">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4" data-testid="kpis">
         <Kpi label={t('insights.kpi.references')} value={formatNumber(T.references, lang)} />
         <Kpi label={t('insights.kpi.books')} value={formatNumber(T.books, lang)} sub={`${formatNumber(T.chapters, lang)} ${t('unit.chapters')}`} />
         <Kpi label={t('insights.kpi.verses')} value={formatNumber(T.versesWithConnections, lang)} sub={`${pct(T.versesWithConnections, T.verses)} ${t('misc.of')} ${formatNumber(T.verses, lang)}`} />
         <Kpi label={t('insights.kpi.avg')} value={T.avgConnectionsPerVerse.toFixed(1)} sub={`${t('panel.outgoing')} + ${t('panel.incoming').toLowerCase()}`} />
         <Kpi label={t('insights.kpi.cross')} value={formatNumber(cross, lang)} sub={pct(cross, T.references)} />
+        <Kpi label={t('insights.kpi.tsk')} value={formatNumber(stats.origin.tsk + stats.origin.tskReverse, lang)} sub={pct(stats.origin.tsk + stats.origin.tskReverse, T.references)} />
+        <Kpi label={t('insights.kpi.openbible')} value={formatNumber(stats.origin.openbible, lang)} sub={pct(stats.origin.openbible, T.references)} />
         <Kpi label={t('insights.kpi.ranges')} value={formatNumber(T.rangeReferences, lang)} sub={pct(T.rangeReferences, T.references)} />
       </div>
 
@@ -140,6 +142,15 @@ function Overview({ stats }: { stats: Statistics }) {
               </div>
             ))}
           </div>
+        </Card>
+        <Card title={t('insights.sources')}>
+          <StackBar
+            parts={[
+              { label: t('source.tsk'), value: stats.origin.tsk, color: '#4f7cff' },
+              { label: t('source.tsk-reverse'), value: stats.origin.tskReverse, color: '#22b8cf' },
+              { label: t('source.openbible'), value: stats.origin.openbible, color: '#f59e0b' },
+            ]}
+          />
         </Card>
         <Card title={t('insights.dist.scope')}>
           <StackBar

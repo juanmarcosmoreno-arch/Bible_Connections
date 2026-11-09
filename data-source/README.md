@@ -6,6 +6,7 @@ Estos archivos se incluyen **sin modificar** y son la única entrada del proceso
 | Archivo | Contenido | Licencia | Procedencia |
 |---|---|---|---|
 | `cross_references.txt` | 344.799 referencias cruzadas con votos (`From Verse`, `To Verse`, `Votes`). Encabezado: `#www.openbible.info CC-BY 2026-11-02` | **Creative Commons Attribution 4.0 (CC BY 4.0)** | [OpenBible.info — Bible Cross References](https://www.openbible.info/labs/cross-references/) |
+| `tsk/TSK.zip` | *Treasury of Scripture Knowledge* (Canne, Browne, Blayney, Scott y otros, c. 1880), módulo SWORD "TSK" v1.4 | **Dominio público** (`DistributionLicense=Public Domain`) | [CrossWire Bible Society](https://www.crosswire.org/sword/modules/ModInfo.jsp?modName=TSK) |
 | `texts/spaRV1909/spaRV1909_vpl.txt` | Santa Biblia — Reina-Valera 1909 (texto por versículo) | **Dominio público** (ver `spaRV1909_about.htm`) | [eBible.org spaRV1909](https://ebible.org/find/details.php?id=spaRV1909) |
 | `texts/eng-web/eng-web_vpl.txt` | World English Bible, edición estable 2020 | **Dominio público**. "World English Bible" es marca de eBible.org: si se modifica el texto no debe usarse ese nombre (ver `eng-web_about.htm`). Aquí no se modifica. | [eBible.org eng-web](https://ebible.org/find/details.php?id=eng-web) |
 
@@ -19,6 +20,19 @@ Según OpenBible.info, los datos provienen principalmente del *Treasury of Scrip
 (dominio público) y los votos iniciales de su *Topical Bible* y *Twitter Bible Search*.
 Bible Connections transforma el archivo a un formato binario y calcula estadísticas, sin
 eliminar, inventar ni alterar referencias (ver `public/data/import-report.json`).
+
+## Fuente de cada referencia
+
+El archivo de OpenBible.info no indica de qué fuente proviene cada registro. Para declararlo,
+`npm run data` compara cada referencia con el propio TSK (`src/data/tsk.ts`):
+
+| Clase | Criterio | Registros |
+|---|---|---|
+| TSK | el TSK cita el destino en la entrada del versículo de origen | 330.007 |
+| TSK (inversa) | el TSK cita el origen en la entrada de un versículo del destino | 5.017 |
+| Agregada por OpenBible.info | no figura en el TSK (Topical Bible, Twitter Bible Search o aportes de usuarios; no se puede distinguir más) | 9.775 |
+
+En la app, "Originales (TSK)" agrupa las dos primeras clases (335.024, 97,2 %).
 
 ## Archivos derivados
 

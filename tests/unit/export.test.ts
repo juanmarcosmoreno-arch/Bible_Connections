@@ -15,7 +15,7 @@ const idx = applyFilters(cols, d, filters);
 describe('exports', () => {
   it('CSV lists the filtered connections with original identifiers', () => {
     const csv = connectionsToCSV(cols, d, idx).trim().split('\n');
-    expect(csv[0]).toBe('rank,source,target,source_book,target_book,source_testament,target_testament,distance_verses,distance_class');
+    expect(csv[0]).toBe('rank,source,target,origin,source_book,target_book,source_testament,target_testament,distance_verses,distance_class');
     expect(csv).toHaveLength(idx.length + 1);
     for (const line of csv.slice(1)) expect(line.split(',')[1]).toMatch(/^Jonah\.\d+\.\d+$/);
   });

@@ -66,6 +66,11 @@ export function validateData(): ValidationResult {
   const msum = stats.matrix.counts.reduce((a, b) => a + b, 0);
   check('statistics totals consistent', stats.totals.references === cols.count && tsum === cols.count && ssum === cols.count && msum === cols.count, `${tsum}/${ssum}/${msum}`);
 
+  const pv = report.provenance;
+  let origins = 0;
+  for (let i = 0; i < cols.count; i++) if (cols.origin[i] <= 2) origins++;
+  check('every record has a provenance (TSK / TSK reverse / OpenBible)', origins === cols.count && pv.tsk + pv.tskReverse + pv.openbible === cols.count, `TSK ${pv.tsk}, reverse ${pv.tskReverse}, OpenBible ${pv.openbible}`);
+
   for (const t of manifest.translations) {
     let bad = 0;
     for (const b of BOOKS) {

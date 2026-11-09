@@ -9,11 +9,13 @@ import { parseCrossReferences, type RawCrossReference } from '../src/data/parser
 import { compareRecords, decodeReferences, encodeReferences } from '../src/data/format.ts';
 import { VERSE_BOOK, VERSE_CHAPTER, osisId, VERSIFICATION_ADDITIONS, parseOsisVerse } from '../src/data/bibleStructure.ts';
 import { OUT_DIR, gzip, isMain, resetDir, sha256, writeBinary, writeJson } from './lib/io.ts';
+import { loadTsk, TSK_ZIP } from './lib/tsk-load.ts';
+import { ORIGIN } from '../src/data/sources.ts';
 
 export const SOURCE_FILE = 'data-source/cross_references.txt';
 
 export interface ImportResult {
-  records: RawCrossReference[]; // sorted, de-duplicated
+  records: ImportRecord[]; // sorted, de-duplicated
   report: ImportReport;
   binFile: string;
   gzFile: string;
@@ -41,6 +43,21 @@ export interface ImportReport {
   reciprocalPairs: number;
   versificationAdditionsUsed: { verse: string; references: number }[];
   roundTrip: { checked: number; mismatches: number };
+  provenance: {
+    method: string;
+    tskFile: string;
+    tskSha256: string;
+    tskVerseEntries: number;
+    tskReferences: number;
+    tskUnparsedParts: number;
+    tsk: number;
+    tskReverse: number;
+    openbible: number;
+  };
+}
+
+export interface ImportRecord extends RawCrossReference {
+  origin: number;
 }
 
 export function importCrossReferences(path = SOURCE_FILE): ImportResult {
@@ -95,7 +112,28 @@ export function importCrossReferences(path = SOURCE_FILE): ImportResult {
     return { verse: id, references: n };
   });
 
-  const sorted = unique.slice().sort(compareRecords);
+  // Provenance: compare every record with the Treasury of Scripture Knowledge.
+  const tsk = loadTsk();
+  const listed = (src: number, ts: number, te: number) => (tsk.byVerse.get(src) ?? []).some((s) => s.start <= te && s.end >= ts);
+  const withOrigin: ImportRecord[] = unique.map((r) => {
+    let origin: number = ORIGIN.OPENBIBLE;
+    for (let s = r.source.start; s <= r.source.end && origin === ORIGIN.OPENBIBLE; s++) if (listed(s, r.target.start, r.target.end)) origin = ORIGIN.TSK;
+    for (let t = r.target.start; t <= r.target.end && origin === ORIGIN.OPENBIBLE; t++) if (listed(t, r.source.start, r.source.end)) origin = ORIGIN.TSK_REVERSE;
+    return { ...r, origin };
+  });
+  const provenance = {
+    method: 'A record counts as TSK when the TSK entry of its source verse lists a passage overlapping the target (or, for TSK reverse, the entry of a target verse lists the source).',
+    tskFile: TSK_ZIP,
+    tskSha256: sha256(readFileSync(TSK_ZIP)),
+    tskVerseEntries: tsk.stats.entries,
+    tskReferences: tsk.stats.spans,
+    tskUnparsedParts: tsk.stats.unparsed,
+    tsk: withOrigin.filter((r) => r.origin === ORIGIN.TSK).length,
+    tskReverse: withOrigin.filter((r) => r.origin === ORIGIN.TSK_REVERSE).length,
+    openbible: withOrigin.filter((r) => r.origin === ORIGIN.OPENBIBLE).length,
+  };
+
+  const sorted = withOrigin.sort(compareRecords);
   const buf = new Uint8Array(encodeReferences(sorted));
   const gz = gzip(buf);
   const hash = sha256(buf).slice(0, 10);
@@ -109,7 +147,8 @@ export function importCrossReferences(path = SOURCE_FILE): ImportResult {
     if (
       span(cols.sourceStart[i], cols.sourceEnd[i]) !== r.sourceId ||
       span(cols.targetStart[i], cols.targetEnd[i]) !== r.targetId ||
-      cols.votes[i] !== r.votes
+      cols.votes[i] !== r.votes ||
+      cols.origin[i] !== r.origin
     ) mismatches++;
   }
   if (mismatches) throw new Error(`Round-trip failed for ${mismatches} records`);
@@ -130,6 +169,7 @@ export function importCrossReferences(path = SOURCE_FILE): ImportResult {
     reciprocalPairs: reciprocal,
     versificationAdditionsUsed: additionsUsed,
     roundTrip: { checked: sorted.length, mismatches },
+    provenance,
   };
 
   return {
@@ -162,6 +202,6 @@ if (isMain(import.meta.url)) {
   console.log(
     `Imported ${report.imported} of ${report.dataLines} records ` +
       `(${report.invalid.count} invalid, ${report.duplicates.count} duplicates) in ${(performance.now() - t0).toFixed(0)} ms; ` +
-      `binary ${res.bytes} B, gzip ${res.gzBytes} B`,
+      `binary ${res.bytes} B, gzip ${res.gzBytes} B; TSK ${report.provenance.tsk} + reverse ${report.provenance.tskReverse}, OpenBible-only ${report.provenance.openbible}`,
   );
 }

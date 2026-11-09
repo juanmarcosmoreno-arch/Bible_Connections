@@ -25,6 +25,7 @@ import { focusBook, focusChapter, focusPassage, focusTestament, goToVerse } from
 import { arcColor, categorical } from '../../utils/colors.ts';
 import { Icon, IconButton, Segmented, Toggle } from '../ui/index.tsx';
 import { ConnectionList, type ConnectionItem } from './ConnectionList.tsx';
+import { useSourceLabel } from '../SourceTag.tsx';
 import { PassageText } from './PassageText.tsx';
 
 type Tab = 'passage' | 'connections' | 'network' | 'context';
@@ -431,6 +432,7 @@ function PositionBar({ start, end, second }: { start: number; end: number; secon
 
 function ReferenceBody({ index: i, tab }: { index: number; tab: Tab }) {
   const t = useT();
+  const sourceLabel = useSourceLabel();
   const lang = useApp((s) => s.lang);
   const { cols, derived } = useData();
   const net = useNetworkFile(tab === 'network' ? 'book' : null);
@@ -453,7 +455,7 @@ function ReferenceBody({ index: i, tab }: { index: number; tab: Tab }) {
   const sb = VERSE_BOOK[s0], tb = VERSE_BOOK[t0];
   const dist = Math.round(Math.abs(derived.targetPos[i] - derived.sourcePos[i]) * TOTAL_VERSES);
   const cls = (['near', 'mid', 'far'] as const)[derived.distClass[i]];
-  const rel = `${s0 >= NT_START ? 'NT' : 'OT'} → ${t0 >= NT_START ? 'NT' : 'OT'}`;
+  const rel = `${t(s0 >= NT_START ? 'testament.NT.short' : 'testament.OT.short')} → ${t(t0 >= NT_START ? 'testament.NT.short' : 'testament.OT.short')}`;
 
   if (tab === 'passage')
     return (
@@ -487,6 +489,10 @@ function ReferenceBody({ index: i, tab }: { index: number; tab: Tab }) {
               </span>
             }
           />
+        </div>
+        <div className="rounded-lg border border-line bg-bg/40 px-3 py-2" data-testid="reference-source">
+          <div className="text-[11px] text-muted">{t('source.label')}</div>
+          <div className="text-sm">{sourceLabel(cols.origin[i])}</div>
         </div>
       </div>
     );

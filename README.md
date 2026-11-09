@@ -94,12 +94,13 @@ panel inferior redimensionable.
 ### Fuentes
 Cada conexión declara su procedencia (en el tooltip, el panel y las listas, con la etiqueta TSK u
 OB). OpenBible.info no la indica en su archivo, así que se compara cada registro con el propio
-*Treasury of Scripture Knowledge* (c. 1880, dominio público): **335.024 (97,2 %) son originales del
+*Treasury of Scripture Knowledge* (c. 1880, dominio público): **335.024 (97,2 %) figuran en el
 TSK** y **9.775 fueron agregadas por OpenBible.info**. El filtro *Fuente* permite ver sólo las
-originales o sólo las agregadas. Detalle del método en `data-source/README.md`.
+del TSK o sólo las agregadas. Las 63.779 referencias de Harrison y Römhild (2007) no están
+publicadas, por lo que no se pueden comparar. Detalle del método en `data-source/README.md`.
 
 ### Filtros
-Fuente (todas, originales del TSK, agregadas por OpenBible) · Testamento (todas, AT→AT, NT→NT, AT↔NT) · uno o varios libros, con dirección *desde / hacia /
+Fuente (todas, del TSK, agregadas por OpenBible) · Testamento (todas, AT→AT, NT→NT, AT↔NT) · uno o varios libros, con dirección *desde / hacia /
 ambas* y modo *entre dos grupos de libros* ·
 distancia (cercanas / intermedias / lejanas) · densidad **Top 1k / 10k / 50k / 100k / todas**.
 La selección es **determinista**: los datos están ordenados por votos (desc.) y luego por posición
@@ -121,6 +122,10 @@ canónica, así que *Top N* es siempre el mismo prefijo, nunca una muestra aleat
   testamentos.
 - **Matriz 66 × 66** (filas: libro de origen, columnas: destino) con escala absoluta, normalizada
   y detalle de las conexiones de cada celda.
+- **Correlación de toda la Biblia**: cuadro 66 × 66 (libros) o 1.189 × 1.189 (todos los
+  capítulos) con la r de Pearson entre perfiles de conexión (con qué libros se conecta cada
+  pasaje, sin contar el propio), en orden canónico o por comunidades, con la lista de pasajes
+  más parecidos. Se calcula en un Web Worker y puede usar los filtros del Arco.
 - **Comparación de testamentos**: flujo AT ↔ NT (p. ej. Isaías → libros del NT; Mateo → AT).
 
 ### Otros
@@ -301,7 +306,7 @@ libros forman 3 comunidades: Nuevo Testamento; Sabiduría, Profetas y Apocalipsi
 
 ## Pruebas
 
-- **Unitarias (Vitest, 77 pruebas, ~5 s)** sobre la base completa: parseo de referencias y rangos,
+- **Unitarias (Vitest, 82 pruebas, ~5 s)** sobre la base completa: parseo de referencias y rangos,
   validación de libros, posiciones globales, formato binario, importación sin pérdidas (cada línea
   del archivo original presente exactamente una vez), integridad referencial, filtros por
   testamento y libro, votos negativos, clases de distancia, Top N determinista, grados por

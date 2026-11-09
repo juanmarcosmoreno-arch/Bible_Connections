@@ -82,7 +82,7 @@ test.describe('Arc view', () => {
     await page.getByRole('radio', { name: 'Added', exact: true }).click();
     await expect(page.getByTestId('filter-count')).toContainText('9,775 of 344,799');
     await expect(page).toHaveURL(/src=openbible/);
-    await page.getByRole('radio', { name: 'Original (TSK)' }).click();
+    await page.getByRole('radio', { name: 'From the TSK' }).click();
     await expect(page.getByTestId('filter-count')).toContainText('335,024 of 344,799');
     await page.getByTestId('filters-reset').click();
     await page.getByTestId('distance-far').click();
@@ -168,6 +168,15 @@ test.describe('Other views', () => {
     await page.mouse.click(hm.x + 44 + cell * 40.5, hm.y + 44 + cell * 22.5);
     await expect(page.getByRole('heading', { name: 'Isaiah → Mark' })).toBeVisible();
     await expect(page.getByTestId('connection-list').locator('li')).not.toHaveCount(0);
+    await page.getByRole('radio', { name: 'Correlation' }).click();
+    const cm = page.getByTestId('correlation-matrix').locator('canvas');
+    await expect(cm).toBeVisible();
+    const cb = (await cm.boundingBox())!;
+    const cc = (cb.width - 44) / 66;
+    await page.mouse.click(cb.x + 44 + cc * 41.5, cb.y + 44 + cc * 39.5); // row Matthew, column Luke
+    await expect(page.getByTestId('correlation-pair')).toContainText('Luke');
+    await page.getByRole('radio', { name: 'Chapters (whole Bible, 1,189)' }).click();
+    await expect(page.getByTestId('correlation-matrix').locator('canvas')).toBeVisible({ timeout: 30_000 });
     await page.getByRole('radio', { name: 'Testaments' }).click();
     await expect(page.getByTestId('testament-flow')).toBeVisible();
     await expect(page.getByText('Strongest links of Isaiah')).toBeVisible();

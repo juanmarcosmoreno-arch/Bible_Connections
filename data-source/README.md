@@ -32,7 +32,7 @@ El archivo de OpenBible.info no indica de qué fuente proviene cada registro. Pa
 | TSK (inversa) | el TSK cita el origen en la entrada de un versículo del destino | 5.017 |
 | Agregada por OpenBible.info | no figura en el TSK (Topical Bible, Twitter Bible Search o aportes de usuarios; no se puede distinguir más) | 9.775 |
 
-En la app, "Originales (TSK)" agrupa las dos primeras clases (335.024, 97,2 %).
+En la app, "Del TSK" agrupa las dos primeras clases (335.024, 97,2 %).
 
 ## Archivos derivados
 

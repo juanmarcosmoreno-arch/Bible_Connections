@@ -4,7 +4,8 @@ import { useTranslations } from '../../hooks/useText.ts';
 import { formatNumber, useT } from '../../i18n/index.ts';
 import { actions, useApp } from '../../state/appState.ts';
 import { Logo } from '../navigation/Logo.tsx';
-import { Modal } from '../ui/index.tsx';
+import { Icon, Modal } from '../ui/index.tsx';
+import { OFFLINE } from '../../data/offline.ts';
 
 export function AboutDialog() {
   const t = useT();
@@ -27,6 +28,17 @@ export function AboutDialog() {
           </div>
         </div>
         <p>{t('about.body')}</p>
+        {!OFFLINE && (
+          <a
+            href={`${import.meta.env.BASE_URL}bible-connections.html`}
+            download="bible-connections.html"
+            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm hover:bg-panel-2"
+            data-testid="offline-download"
+          >
+            <Icon name="download" size={16} /> {t('about.offline')}
+          </a>
+        )}
+        {!OFFLINE && <p className="mt-1 text-xs text-muted">{t('about.offlineHelp')}</p>}
         <H>{t('about.data')}</H>
         <p>
           {t('about.dataBody')}{' '}

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { CorrLevel } from '../analysis/correlation.ts';
 import { useData } from './useData.tsx';
+import { OFFLINE, later } from '../data/offline.ts';
+import { connectionProfiles, correlationMatrix } from '../analysis/correlation.ts';
 
 let worker: Worker | null = null;
 let seq = 0;
@@ -22,6 +24,19 @@ export function useCorrelation(level: CorrLevel, useFilters: boolean, range?: [n
   const key = `${level}:${range ? range.join('-') : ''}:${useFilters ? filtered?.length : 'all'}`;
   useEffect(() => {
     if (!cols) return;
+    if (OFFLINE) {
+      let alive = true;
+      const t0 = performance.now();
+      later(() => {
+        const profiles = connectionProfiles(cols, level, useFilters ? filtered ?? null : null, range);
+        return { profiles, matrix: correlationMatrix(profiles, level, range ? range[0] : 0) };
+      }).then(({ profiles, matrix }) => {
+        if (alive) setState({ key, result: { level, offset: range ? range[0] : 0, n: Math.round(Math.sqrt(matrix.length)), matrix, profiles, ms: performance.now() - t0 } });
+      });
+      return () => {
+        alive = false;
+      };
+    }
     worker ??= new Worker(new URL('../workers/analysis.worker.ts', import.meta.url), { type: 'module' });
     const id = ++seq;
     let alive = true;

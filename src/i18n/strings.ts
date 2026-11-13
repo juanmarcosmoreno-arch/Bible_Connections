@@ -350,6 +350,8 @@ const en = {
   'about.title': 'About Bible Connections',
   'about.body':
     'Bible Connections visualises the 344,799 cross-references of the OpenBible.info dataset. Each arc links two passages; colour encodes the distance between them. The project is inspired by the 2007 cross-reference visualisation by Chris Harrison and Christoph Römhild. It is an independent work, not an official reproduction.',
+  'about.offline': 'Download for offline use (single HTML file, ~6 MB)',
+  'about.offlineHelp': 'The whole app, data and texts in one file: save it and open it with a double click, without an internet connection. Notes and bookmarks are stored separately for that file.',
   'about.data': 'Data',
   'about.dataBody': 'Cross-references: OpenBible.info, licensed under Creative Commons Attribution 4.0 (CC BY 4.0). Data derived primarily from the public-domain Treasury of Scripture Knowledge.',
   'about.texts': 'Bible texts',
@@ -723,6 +725,8 @@ const es: Record<StringKey, string> = {
   'about.title': 'Acerca de Bible Connections',
   'about.body':
     'Bible Connections visualiza las 344.799 referencias cruzadas del conjunto de datos de OpenBible.info. Cada arco une dos pasajes; el color indica la distancia entre ellos. El proyecto se inspira en la visualización de referencias cruzadas de Chris Harrison y Christoph Römhild (2007). Es una obra independiente, no una reproducción oficial.',
+  'about.offline': 'Descargar para usar sin conexión (un solo archivo HTML, ~6 MB)',
+  'about.offlineHelp': 'Toda la aplicación, los datos y los textos en un archivo: guardalo y abrilo con doble clic, sin internet. Las notas y favoritos se guardan aparte para ese archivo.',
   'about.data': 'Datos',
   'about.dataBody': 'Referencias cruzadas: OpenBible.info, bajo licencia Creative Commons Atribución 4.0 (CC BY 4.0). Datos derivados principalmente del Treasury of Scripture Knowledge (dominio público).',
   'about.texts': 'Textos bíblicos',

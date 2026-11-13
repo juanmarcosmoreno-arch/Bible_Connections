@@ -6,6 +6,7 @@ import type { Statistics } from '../analysis/statistics.ts';
 import type { NetworkFile } from '../graph/networkTypes.ts';
 import { decodeReferences, type DataManifest, type ReferenceColumns } from './format.ts';
 import { fetchReferenceBinary } from './fetchBinary.ts';
+import { OFFLINE, embedded, embeddedBytes } from './offline.ts';
 
 export type Manifest = DataManifest & { inputsHash?: string };
 
@@ -15,11 +16,13 @@ const memo = new Map<string, Promise<unknown>>();
 
 export function loadJSON<T>(path: string): Promise<T> {
   if (!memo.has(path)) {
-    const p = fetch(DATA_BASE + path).then((r) => {
+    const p = (embedded(path) !== undefined
+      ? embeddedBytes(path).then((b) => JSON.parse(new TextDecoder().decode(b!)) as T)
+      : fetch(DATA_BASE + path).then((r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status} for ${path}`);
       if ((r.headers.get('content-type') ?? '').includes('text/html')) throw new Error(`Missing data file ${path}`);
       return r.json() as Promise<T>;
-    });
+    }));
     p.catch(() => memo.delete(path));
     memo.set(path, p);
   }
@@ -43,6 +46,13 @@ export function loadReferences(onProgress?: (f: number) => void): Promise<Refere
       count: m.references.count,
       sizes: { gz: m.references.gzBytes, raw: m.references.bytes },
     };
+    if (OFFLINE || embedded(m.references.gzFile) !== undefined) {
+      const buf = await embeddedBytes(m.references.gzFile);
+      if (buf) {
+        onProgress?.(1);
+        return decodeReferences(buf, req.count);
+      }
+    }
     if (typeof Worker !== 'undefined') {
       try {
         return await new Promise<ReferenceColumns>((resolve, reject) => {

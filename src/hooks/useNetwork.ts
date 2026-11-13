@@ -3,6 +3,8 @@ import type { NodeLevel } from '../analysis/aggregate.ts';
 import { loadNetwork } from '../data/loader.ts';
 import type { NetworkFile } from '../graph/networkTypes.ts';
 import { useData } from './useData.tsx';
+import { OFFLINE, later } from '../data/offline.ts';
+import { buildNetworkFile } from '../graph/networkFile.ts';
 
 let worker: Worker | null = null;
 let seq = 0;
@@ -22,6 +24,16 @@ export function useNetwork(level: NodeLevel, useFilters: boolean): { file: Netwo
       setState((s) => ({ ...s, computing: true }));
       loadNetwork(level)
         .then((file) => alive && setState({ file, computing: false, ms: null, error: null }))
+        .catch((e) => alive && setState({ file: null, computing: false, ms: null, error: String(e) }));
+      return () => {
+        alive = false;
+      };
+    }
+    if (OFFLINE) {
+      setState((s) => ({ ...s, computing: true }));
+      const t0 = performance.now();
+      later(() => buildNetworkFile(cols, level, { edgesPerNode: level === 'book' ? 66 : 8, indices: filtered, betweennessSamples: level === 'chapter' ? 128 : undefined }))
+        .then((file) => alive && setState({ file, computing: false, ms: performance.now() - t0, error: null }))
         .catch((e) => alive && setState({ file: null, computing: false, ms: null, error: String(e) }));
       return () => {
         alive = false;

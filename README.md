@@ -360,6 +360,16 @@ con LOD por distancia, acumulación progresiva (los arcos más votados primero),
 `fenceSync`, subidas a la GPU sólo cuando está libre, resolución reducida durante el zoom en
 pantallas HiDPI, memoización de arreglos derivados y filtrado lineal sobre arreglos tipados.
 
+## Versión sin conexión (un solo archivo HTML)
+
+`npm run build:offline` genera `dist-offline/bible-connections.html` (~6 MB): toda la aplicación,
+las 344.799 referencias, ambos textos bíblicos, estadísticas, redes y personas y lugares en un
+único archivo que se abre con doble clic, sin internet. Los datos van comprimidos (gzip + base64)
+dentro del HTML y se descomprimen en el navegador; como los navegadores no permiten Web Workers
+ni `fetch` desde archivos locales, en esa versión los cálculos pesados corren en la página. El
+workflow de GitHub Actions la publica en `…/Bible_Connections/bible-connections.html`, y la app
+ofrece el enlace de descarga en *Acerca de*.
+
 ## Publicación en GitHub Pages
 
 El workflow `.github/workflows/deploy.yml` instala dependencias, genera y valida los datos,
